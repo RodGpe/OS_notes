@@ -377,20 +377,101 @@ Las prioridades cambiaron. Ya no se diseñaba todo para 100 usuarios compartiend
 
 Empresas como **Apple**, **Microsoft** e **IBM** transformaron el mercado. El sistema operativo pasó de usarse principalmente por científicos, ingenieros, universidades y gobierno, a usarse por prácticamente cualquier persona.
 
+En esta misma época, el software empezó a dividirse en dos modelos:
 
+```text
+Software propietario          Software libre / open source
+─────────────────────         ────────────────────────────
+código cerrado                código visible y modificable
+licencia restrictiva          licencia que permite copiar y mejorar
+Windows, macOS clásico        GNU, Linux, BSD
+```
+
+---
+
+## Open source y el software libre
+
+Hasta los años 70, muchos investigadores **compartían código** como parte de la cultura académica. UNIX circulaba con su código fuente entre universidades. Pero cuando las computadoras personales y el mercado comercial crecieron, cada vez más empresas **cerraron el código** y vendieron el software como producto.
+
+### El problema que intentaba resolver
+
+Imagina que compras una computadora, pero:
+
+- No puedes ver cómo funciona el sistema operativo por dentro.
+- No puedes corregir un error aunque sepas programar.
+- No puedes adaptarlo a tus necesidades.
+- Depende de una sola empresa para que siga existiendo.
+
+Para muchos programadores — especialmente en universidades — eso era inaceptable. Querían la misma libertad que habían tenido con UNIX en los laboratorios: **estudiar, modificar y compartir** el software.
+
+### GNU y la idea del software libre
+
+En **1983**, **Richard Stallman** inició el proyecto **GNU** (*GNU's Not Unix*) con una meta explícita: construir un sistema operativo completo, compatible con UNIX, pero **libre**.
+
+> **Software libre** no significa “gratis”. Significa que el usuario tiene **cuatro libertades**: ejecutar, estudiar, modificar y redistribuir el programa.
+
+GNU produjo herramientas fundamentales que hoy siguen en casi todo sistema Linux:
+
+```text
+GCC (compilador) · Bash (shell) · Emacs · utilidades del sistema
+```
+
+Para completar el sistema faltaba la pieza más crítica: el **kernel**.
+
+### Open source: colaboración a escala planetaria
+
+En los **90**, el término **open source** popularizó una idea parecida con énfasis práctico: publicar el código fuente permite que **miles de desarrolladores** encuentren errores, propongan mejoras y porten el software a hardware nuevo.
+
+```text
+Modelo propietario              Modelo open source
+──────────────────              ──────────────────
+pocos desarrolladores           comunidad global
+bugs ocultos                    muchos ojos revisando
+dependencia del vendor          cualquiera puede mantenerlo
+innovación cerrada              mejoras compartidas
+```
+
+**¿Qué papel juega en la historia de los SO?** El open source no inventó procesos, archivos ni scheduling. Pero cambió **cómo se construyen y distribuyen** los sistemas operativos modernos:
+
+1. **Democratizó el acceso** — cualquier universidad, empresa o persona puede estudiar un kernel real.
+2. **Aceleró la innovación** — TCP/IP, el stack web, contenedores y la nube crecieron sobre herramientas abiertas.
+3. **Definió la infraestructura global** — la mayoría de servidores, supercomputadoras y datacenters corren Linux.
+4. **Permeó dispositivos cotidianos** — Android usa el kernel de Linux; routers, TVs y autos usan componentes open source.
+
+> **Dato curioso:** cuando Linus Torvalds publicó Linux en 1991, lo hizo bajo la licencia **GPL** de GNU. Por eso a menudo se habla de **GNU/Linux**: kernel de Linus + herramientas del proyecto GNU.
 
 ---
 
 ## Linux y el mundo moderno
 
-En **1991**, Linus Torvalds comenzó un kernel que se convertiría en **Linux**. Hoy está presente en:
+En **1991**, **Linus Torvalds**, estudiante en Helsinki, comenzó un kernel como proyecto personal. Estaba frustrado porque **MINIX** (un Unix educativo) era demasiado restrictivo para experimentar. Publicó el código en Internet y otros desarrolladores empezaron a contribuir.
+
+Linux no nació en una empresa: nació como **proyecto open source** que creció gracias a la red y a las herramientas GNU ya existentes.
+
+```text
+Kernel Linux  +  GNU tools  +  contribuciones de la comunidad  =  GNU/Linux
+```
+
+Hoy Linux está presente en:
 
 ```text
 servidores · cloud · supercomputadoras · routers
 Android · IoT · embedded systems
 ```
 
-> El **kernel de Linux** se utiliza en muchos sistemas, e.g., en Android. 
+> El **kernel de Linux** se utiliza en muchos sistemas, por ejemplo en **Android**. La mayor parte de Internet — desde Google hasta Netflix — corre sobre infraestructura Linux.
+
+### ¿Por qué importa para Sistemas Operativos?
+
+En este curso usarás Linux precisamente porque el open source te permite:
+
+```bash
+strace ./programa      # ver system calls
+cat /proc/cpuinfo      # inspeccionar el kernel
+gcc -Wall programa.c   # compilar con herramientas abiertas
+```
+
+No solo **usas** el sistema operativo: puedes **observarlo por dentro**. Eso era casi imposible con los SO propietarios de los años 80.
 
 ---
 
@@ -403,7 +484,7 @@ Android · IoT · embedded systems
 1960–70 TIME-SHARING — Muchos usuarios interactivos
 1970   UNIX — Procesos + archivos + pipes + portabilidad
 1980   PERSONAL COMPUTERS — Una computadora por usuario
-1990   INTERNET + LINUX + WINDOWS
+1990   OPEN SOURCE — GNU + Linux + Internet
 2000   MÓVILES + VIRTUALIZACIÓN
 2010+  CLOUD + CONTAINERS
 HOY
@@ -846,6 +927,9 @@ Muchos usuarios + recursos compartidos → permissions
 | **Device Driver** | Software que permite al SO controlar determinado hardware |
 | **Virtualization** | Creación de representaciones virtuales de recursos físicos |
 | **Scheduler** | Componente que decide qué proceso o thread obtiene CPU |
+| **Open Source** | Software cuyo código fuente es público y puede modificarse y redistribuirse |
+| **Software libre** | Software que respeta las cuatro libertades del usuario (ejecutar, estudiar, modificar, compartir) |
+| **GPL** | Licencia copyleft de GNU; exige que derivados también se distribuyan con el mismo tipo de libertad |
 
 ---
 
@@ -919,6 +1003,8 @@ Compartir datacenter → Cloud
 - El término **bug** existía antes de las computadoras. En 1947, el equipo de Grace Hopper encontró una polilla atrapada en un relay de la Harvard Mark II y la pegó en su bitácora.
 
 - UNIX comenzó en 1969; Linux en 1991. Más de medio siglo después, seguimos usando comandos e ideas enormemente influenciadas por UNIX.
+
+- Linux empezó como un mensaje en un foro de Usenet pidiendo comentarios sobre un proyecto “pequeño” de hobby. Hoy impulsa la mayor parte de Internet.
 
 - Tu teléfono probablemente ejecuta más procesos simultáneamente que un mainframe antiguo hubiera podido imaginar.
 
