@@ -54,7 +54,7 @@ Al finalizar esta sesión, deberás ser capaz de:
 
 ---
 
-## 1. Introducción: una computadora sin sistema operativo
+## Introducción: una computadora sin sistema operativo
 
 Imagina que la UNAM compra una computadora de varios millones de dólares, pero:
 
@@ -76,7 +76,383 @@ En las primeras computadoras, **los humanos hacían muchas de las tareas que des
 
 ---
 
-## 2. Hardware, software y sistema operativo
+## 1940–1950: antes del sistema operativo
+
+Las primeras computadoras electrónicas eran radicalmente diferentes. Generalmente no existían:
+
+- Sistemas operativos
+- Terminales
+- Interfaces gráficas
+- Discos modernos
+- Lenguajes de alto nivel como los actuales
+
+```text
+Programador
+     │
+     ▼
++------------+
+| Hardware   |
+| CPU        |
+| Memoria    |
+| I/O        |
++------------+
+```
+
+### Contexto histórico: Segunda Guerra Mundial
+
+La Segunda Guerra Mundial aceleró enormemente el desarrollo de tecnología de cómputo. Había problemas de enorme interés militar:
+
+- Criptografía
+- Cálculos balísticos y tablas de tiro
+- Navegación y simulaciones
+- Procesamiento de grandes cantidades de información
+
+Computadoras como **Colossus** (británicos, descifrado de comunicaciones alemanas) y **ENIAC** (Estados Unidos, cálculos de artillería) convirtieron la computación de un experimento académico en una tecnología estratégica.
+
+> **Dato curioso:** ENIAC pesaba aproximadamente **30 toneladas** y utilizaba alrededor de **18,000 tubos de vacío**. Hoy, un teléfono tiene millones de veces más capacidad computacional.
+
+### El problema económico
+
+```text
+COMPUTADORA = DINERO
+```
+
+Si una computadora cuesta una fortuna, no quieres verla esperando a que un humano cambie tarjetas o prepare el siguiente programa. Pero eso sucedía:
+
+```text
+CPU trabajando:        ████
+CPU esperando humanos: ██████████████████████████████
+```
+
+Los ingenieros comenzaron a preguntarse: **¿Cómo podemos mantener ocupada la máquina?**
+
+---
+
+## Procesamiento por lotes (batch processing)
+
+Una solución fue el **procesamiento por lotes**:
+
+1. Los programadores entregan sus programas.
+2. Un operador los reúne.
+3. Se crea una cola de trabajos.
+4. La computadora los ejecuta automáticamente.
+
+```text
+JOB A → JOB B → JOB C → JOB D
+```
+
+**Analogía:** en una lavandería no lavas una camiseta, esperas, lavas otra, esperas… Agrupas el trabajo. Eso es un **batch**.
+
+### Programar era frustrante
+
+Imagina escribir `printf("Hola mundo\n");`, entregar tu trabajo y, dos horas después, recibir:
+
+```text
+COMPILATION ERROR
+```
+
+Olvidaste un `;`. Corriges, vuelves a entregar y esperas otra vez.
+
+Cada vez que tu compilador marca un error en 0.2 segundos, agradece no estar programando en 1955.
+
+---
+
+## Multiprogramación
+
+### El problema de I/O
+
+Cuando un programa espera a un dispositivo lento (disco, teclado), la CPU queda inutilizada:
+
+```text
+CPU: ejecutando ██████████ | esperando I/O ............... | ejecutando ██████████
+```
+
+![](memory_speed.png)
+
+![](cpu_vs_io.png)
+Pero hay otro programa esperando. Entonces surge la idea:
+
+> **¿Por qué no ejecutar otro programa mientras el primero espera?**
+
+Así nace la **multiprogramación**. En memoria pueden existir varios programas:
+
+```text
+RAM
++---------------------+
+| Sistema Operativo   |
++---------------------+
+| Programa A          |
++---------------------+
+| Programa B          |
++---------------------+
+| Programa C          |
++---------------------+
+```
+
+Ejemplo:
+
+```text
+Programa A → esperando disco
+Programa B → listo
+Programa C → esperando teclado
+
+CPU → Programa B
+```
+
+### Nuevos problemas (y el temario del curso)
+
+La multiprogramación crea preguntas fundamentales:
+
+```text
+¿Quién usa el CPU?          → Scheduling
+¿Durante cuánto tiempo?     → Scheduling
+¿Quién utiliza qué memoria? → Memory management
+¿Puede A leer la memoria de B? → Protection
+¿Qué pasa si A nunca termina?  → Processes
+¿Dos programas escriben al disco? → I/O, Synchronization
+```
+
+
+### Hardware clave: interrupciones
+
+Sin interrupciones, el CPU tendría que preguntar constantemente al dispositivo:
+
+```text
+¿Terminaste disco? ¿Ahora? ¿Ahora? ¿Ahora?
+```
+
+Esto se llama **polling** y es ineficiente.
+
+Con una **interrupción**, el dispositivo avisa al CPU:
+
+```text
+             INTERRUPCIÓN
+                  ▲
++----------+      │
+|  Disco   |──────┘
++----------+
+                  ▼
+              +-------+
+              |  CPU  |
+              +-------+
+```
+
+El CPU detiene temporalmente lo que hace y transfiere control al sistema operativo.
+
+> **Importante:** muchas ideas de los SO dependen tanto del **hardware** como del software: interrupciones, timer, modos privilegiados, MMU y protección de memoria. Por eso Sistemas Operativos no es solamente una materia de software.
+
+---
+
+## Time-sharing (tiempo compartido)
+
+La multiprogramación mejoró la utilización del CPU, pero los usuarios querían **interactividad**.
+
+Imagina 20 terminales conectadas a una misma computadora. El sistema asigna pequeños intervalos de CPU a cada usuario:
+
+```text
+Tiempo →
+
+A ███
+B    ███
+C       ███
+A          ███
+B             ███
+```
+
+Como el cambio ocurre rápidamente, cada usuario tiene la ilusión de utilizar la computadora sola. Eso es **time-sharing**.
+
+**Idea clave:** un scheduler reparte el CPU en intervalos cortos, similar a turnarse con un recurso compartido muy rápido.
+
+---
+
+## Contexto: Guerra Fría y redes
+
+Después de la Segunda Guerra Mundial comenzó una enorme competencia tecnológica entre Estados Unidos y la Unión Soviética. La informática dejó de ser solo una herramienta científica y se volvió estratégica:
+
+```text
+misiles · radar · defensa aérea · satélites
+criptografía · simulación · comunicaciones · exploración espacial
+```
+
+### Sputnik (1957)
+
+Cuando la Unión Soviética lanzó **Sputnik 1**, causó una enorme conmoción en Estados Unidos. La percepción era: *"Los soviéticos nos están ganando tecnológicamente."* Estados Unidos aumentó fuertemente la inversión en ciencia e ingeniería. En este ambiente surgió **ARPA** (después DARPA).
+
+> **Dato curioso:** una consecuencia indirecta de esta competencia fue el desarrollo de redes. En **1969** comenzó a operar **ARPANET**, uno de los grandes antecedentes técnicos de Internet.
+
+---
+
+## 1969: un año importante
+
+En 1969 ocurrieron tres acontecimientos distintos pero relacionados con una época de enorme inversión tecnológica:
+
+```text
+1969
+
+Apollo 11 llega a la Luna
+ARPANET comienza a operar
+Comienza el desarrollo de UNIX
+```
+
+---
+
+## UNIX
+
+UNIX comenzó a desarrollarse en **Bell Labs**, con figuras fundamentales como **Ken Thompson** y **Dennis Ritchie**.
+
+UNIX introdujo o popularizó ideas que siguen siendo centrales:
+
+```text
+procesos · archivos · pipes · shell
+jerarquía de directorios · permisos · herramientas pequeñas
+```
+
+https://www.tuhs.org/Archive/Distributions/Research/McIlroy_v0/UnixEditionZero-Threshold_OCR.pdf (1974)
+
+### La filosofía Unix
+
+> Haz programas pequeños que hagan una cosa bien y permite combinarlos.
+
+```bash
+ls | grep ".c" | wc -l
+```
+
+```text
+ls → grep → wc
+```
+
+La salida de un programa se convierte en la entrada del siguiente. El símbolo `|` representa un **pipe**.
+
+### C y UNIX crecieron juntos
+
+UNIX inicialmente tenía partes escritas en ensamblador. Dennis Ritchie desarrolló **C** y una buena parte de UNIX fue reescrita en C.
+
+Antes:
+
+```text
+Sistema Operativo → Hardware específico
+```
+
+Con C:
+
+```text
+               UNIX (escrito en C)
+                 │
+        ┌────────┴────────┐
+        ▼                 ▼
+   Hardware A         Hardware B
+```
+
+Esto permitió **portabilidad** entre arquitecturas. No es casualidad que en una clase moderna de Sistemas Operativos sigamos usando C.
+
+> **Dato curioso:** antes de UNIX existía **MULTICS** (*Multiplexed Information and Computing Service*). UNIX surgió como un sistema mucho más pequeño; su nombre fue un juego de palabras relacionado con MULTICS.
+
+---
+
+## Computadoras personales (años 70–80)
+
+Hasta aproximadamente los años 70:
+
+```text
+muchas personas → una computadora
+```
+
+Con la caída del precio del hardware y los microprocesadores:
+
+```text
+una persona → una computadora
+```
+
+Las prioridades cambiaron. Ya no se diseñaba todo para 100 usuarios compartiendo una máquina. Comenzaron a importar:
+
+- Interfaces fáciles de usar
+- Gráficos, teclado y mouse
+- Aplicaciones personales
+
+> **Dato curioso:** durante décadas, una organización podía tener **una sola computadora**. Hoy puedes tener laptop, celular, smartwatch, TV, router, automóvil, consola y asistentes de voz, todos ejecutando algún tipo de sistema operativo.
+
+---
+
+## 1980–1990: PC, interfaces gráficas y competencia comercial
+
+Empresas como **Apple**, **Microsoft** e **IBM** transformaron el mercado. El sistema operativo pasó de usarse principalmente por científicos, ingenieros, universidades y gobierno, a usarse por prácticamente cualquier persona.
+
+
+
+---
+
+## Linux y el mundo moderno
+
+En **1991**, Linus Torvalds comenzó un kernel que se convertiría en **Linux**. Hoy está presente en:
+
+```text
+servidores · cloud · supercomputadoras · routers
+Android · IoT · embedded systems
+```
+
+> El **kernel de Linux** se utiliza en muchos sistemas, e.g., en Android. 
+
+---
+
+## Evolución completa
+
+```text
+1940   SIN SISTEMA OPERATIVO — Humanos controlan directamente la máquina
+1950   BATCH PROCESSING — Automatizar secuencias de trabajos
+1960   MULTIPROGRAMACIÓN — Mantener ocupado el CPU
+1960–70 TIME-SHARING — Muchos usuarios interactivos
+1970   UNIX — Procesos + archivos + pipes + portabilidad
+1980   PERSONAL COMPUTERS — Una computadora por usuario
+1990   INTERNET + LINUX + WINDOWS
+2000   MÓVILES + VIRTUALIZACIÓN
+2010+  CLOUD + CONTAINERS
+HOY
+```
+
+Lo importante: las ideas anteriores **no desaparecieron**. Se **acumularon**.
+
+---
+
+## De los mainframes a la nube
+
+En los años 60:
+
+```text
+COMPUTADORA CARÍSIMA → muchos usuarios → hay que compartirla eficientemente
+```
+
+Hoy:
+
+```text
+DATACENTER CARÍSIMO → miles de clientes → hay que compartirlo eficientemente
+```
+
+El problema fundamental reaparece. Ahora utilizamos:
+
+```text
+máquinas virtuales · contenedores · orquestadores · cloud computing
+```
+
+> AWS y Azure resuelven a escala planetaria algunos de los mismos problemas conceptuales que los mainframes intentaban resolver hace décadas.
+
+### Virtualización moderna
+
+```mermaid
+block-beta
+    columns 1
+    App["Aplicaciones"]
+    Cont["Containers"]
+    Lin["Linux"]
+    VM["Máquina Virtual"]
+    Hyp["Hypervisor"]
+    Hard["Hardware"]
+```
+
+Seguimos preguntando: **¿Cómo compartir hardware sin que un usuario interfiera con otro?**
+
+---
+
+## Hardware, software y sistema operativo
 
 ### Hardware
 
@@ -230,383 +606,7 @@ Gracias a interfaces estándar (`open`, `read`, `write`, …), programas distint
 
 ---
 
-## 3. 1940–1950: antes del sistema operativo
-
-Las primeras computadoras electrónicas eran radicalmente diferentes. Generalmente no existían:
-
-- Sistemas operativos
-- Terminales
-- Interfaces gráficas
-- Discos modernos
-- Lenguajes de alto nivel como los actuales
-
-```text
-Programador
-     │
-     ▼
-+------------+
-| Hardware   |
-| CPU        |
-| Memoria    |
-| I/O        |
-+------------+
-```
-
-### Contexto histórico: Segunda Guerra Mundial
-
-La Segunda Guerra Mundial aceleró enormemente el desarrollo de tecnología de cómputo. Había problemas de enorme interés militar:
-
-- Criptografía
-- Cálculos balísticos y tablas de tiro
-- Navegación y simulaciones
-- Procesamiento de grandes cantidades de información
-
-Computadoras como **Colossus** (británicos, descifrado de comunicaciones alemanas) y **ENIAC** (Estados Unidos, cálculos de artillería) convirtieron la computación de un experimento académico en una tecnología estratégica.
-
-> **Dato curioso:** ENIAC pesaba aproximadamente **30 toneladas** y utilizaba alrededor de **18,000 tubos de vacío**. Hoy, un teléfono tiene millones de veces más capacidad computacional.
-
-### El problema económico
-
-```text
-COMPUTADORA = $$$$$$$$
-```
-
-Si una computadora cuesta una fortuna, no quieres verla esperando a que un humano cambie tarjetas o prepare el siguiente programa. Pero eso sucedía:
-
-```text
-CPU trabajando:        ████
-CPU esperando humanos: ██████████████████████████████
-```
-
-Los ingenieros comenzaron a preguntarse: **¿Cómo podemos mantener ocupada la máquina?**
-
----
-
-## 4. Procesamiento por lotes (batch processing)
-
-Una solución fue el **procesamiento por lotes**:
-
-1. Los programadores entregan sus programas.
-2. Un operador los reúne.
-3. Se crea una cola de trabajos.
-4. La computadora los ejecuta automáticamente.
-
-```text
-JOB A → JOB B → JOB C → JOB D
-```
-
-**Analogía:** en una lavandería no lavas una camiseta, esperas, lavas otra, esperas… Agrupas el trabajo. Eso es un **batch**.
-
-### Programar era frustrante
-
-Imagina escribir `printf("Hola mundo\n");`, entregar tu trabajo y, dos horas después, recibir:
-
-```text
-COMPILATION ERROR
-```
-
-Olvidaste un `;`. Corriges, vuelves a entregar y esperas otra vez.
-
-Cada vez que tu compilador marca un error en 0.2 segundos, agradece no estar programando en 1955.
-
----
-
-## 5. Multiprogramación
-
-### El problema de I/O
-
-Cuando un programa espera a un dispositivo lento (disco, teclado), la CPU queda inutilizada:
-
-```text
-CPU: ejecutando ██████████ | esperando I/O ............... | ejecutando ██████████
-```
-
-![](memory_speed.png)
-
-![](cpu_vs_io.png)
-Pero hay otro programa esperando. Entonces surge la idea:
-
-> **¿Por qué no ejecutar otro programa mientras el primero espera?**
-
-Así nace la **multiprogramación**. En memoria pueden existir varios programas:
-
-```text
-RAM
-+---------------------+
-| Sistema Operativo   |
-+---------------------+
-| Programa A          |
-+---------------------+
-| Programa B          |
-+---------------------+
-| Programa C          |
-+---------------------+
-```
-
-Ejemplo:
-
-```text
-Programa A → esperando disco
-Programa B → listo
-Programa C → esperando teclado
-
-CPU → Programa B
-```
-
-### Nuevos problemas (y el temario del curso)
-
-La multiprogramación crea preguntas fundamentales:
-
-```text
-¿Quién usa el CPU?          → Scheduling
-¿Durante cuánto tiempo?     → Scheduling
-¿Quién utiliza qué memoria? → Memory management
-¿Puede A leer la memoria de B? → Protection
-¿Qué pasa si A nunca termina?  → Processes
-¿Dos programas escriben al disco? → I/O, Synchronization
-```
-
-
-### Hardware clave: interrupciones
-
-Sin interrupciones, el CPU tendría que preguntar constantemente al dispositivo:
-
-```text
-¿Terminaste disco? ¿Ahora? ¿Ahora? ¿Ahora?
-```
-
-Esto se llama **polling** y es ineficiente.
-
-Con una **interrupción**, el dispositivo avisa al CPU:
-
-```text
-             INTERRUPCIÓN
-                  ▲
-+----------+      │
-|  Disco   |──────┘
-+----------+
-                  ▼
-              +-------+
-              |  CPU  |
-              +-------+
-```
-
-El CPU detiene temporalmente lo que hace y transfiere control al sistema operativo.
-
-> **Importante:** muchas ideas de los SO dependen tanto del **hardware** como del software: interrupciones, timer, modos privilegiados, MMU y protección de memoria. Por eso Sistemas Operativos no es solamente una materia de software.
-
----
-
-## 6. Time-sharing (tiempo compartido)
-
-La multiprogramación mejoró la utilización del CPU, pero los usuarios querían **interactividad**.
-
-Imagina 20 terminales conectadas a una misma computadora. El sistema asigna pequeños intervalos de CPU a cada usuario:
-
-```text
-Tiempo →
-
-A ███
-B    ███
-C       ███
-A          ███
-B             ███
-```
-
-Como el cambio ocurre rápidamente, cada usuario tiene la ilusión de utilizar la computadora sola. Eso es **time-sharing**.
-
-**Idea clave:** un scheduler reparte el CPU en intervalos cortos, similar a turnarse con un recurso compartido muy rápido.
-
----
-
-## 7. Contexto: Guerra Fría y redes
-
-Después de la Segunda Guerra Mundial comenzó una enorme competencia tecnológica entre Estados Unidos y la Unión Soviética. La informática dejó de ser solo una herramienta científica y se volvió estratégica:
-
-```text
-misiles · radar · defensa aérea · satélites
-criptografía · simulación · comunicaciones · exploración espacial
-```
-
-### Sputnik (1957)
-
-Cuando la Unión Soviética lanzó **Sputnik 1**, causó una enorme conmoción en Estados Unidos. La percepción era: *"Los soviéticos nos están ganando tecnológicamente."* Estados Unidos aumentó fuertemente la inversión en ciencia e ingeniería. En este ambiente surgió **ARPA** (después DARPA).
-
-> **Dato curioso:** una consecuencia indirecta de esta competencia fue el desarrollo de redes. En **1969** comenzó a operar **ARPANET**, uno de los grandes antecedentes técnicos de Internet.
-
----
-
-## 8. 1969: un año importante
-
-En 1969 ocurrieron tres acontecimientos distintos pero relacionados con una época de enorme inversión tecnológica:
-
-```text
-1969
-
-Apollo 11 llega a la Luna
-ARPANET comienza a operar
-Comienza el desarrollo de UNIX
-```
-
----
-
-## 9. UNIX
-
-UNIX comenzó a desarrollarse en **Bell Labs**, con figuras fundamentales como **Ken Thompson** y **Dennis Ritchie**.
-
-UNIX introdujo o popularizó ideas que siguen siendo centrales:
-
-```text
-procesos · archivos · pipes · shell
-jerarquía de directorios · permisos · herramientas pequeñas
-```
-
-https://www.tuhs.org/Archive/Distributions/Research/McIlroy_v0/UnixEditionZero-Threshold_OCR.pdf (1974)
-
-### La filosofía Unix
-
-> Haz programas pequeños que hagan una cosa bien y permite combinarlos.
-
-```bash
-ls | grep ".c" | wc -l
-```
-
-```text
-ls → grep → wc
-```
-
-La salida de un programa se convierte en la entrada del siguiente. El símbolo `|` representa un **pipe**.
-
-### C y UNIX crecieron juntos
-
-UNIX inicialmente tenía partes escritas en ensamblador. Dennis Ritchie desarrolló **C** y una buena parte de UNIX fue reescrita en C.
-
-Antes:
-
-```text
-Sistema Operativo → Hardware específico
-```
-
-Con C:
-
-```text
-               UNIX (escrito en C)
-                 │
-        ┌────────┴────────┐
-        ▼                 ▼
-   Hardware A         Hardware B
-```
-
-Esto permitió **portabilidad** entre arquitecturas. No es casualidad que en una clase moderna de Sistemas Operativos sigamos usando C.
-
-> **Dato curioso:** antes de UNIX existía **MULTICS** (*Multiplexed Information and Computing Service*). UNIX surgió como un sistema mucho más pequeño; su nombre fue un juego de palabras relacionado con MULTICS.
-
----
-
-## 10. Computadoras personales (años 70–80)
-
-Hasta aproximadamente los años 70:
-
-```text
-muchas personas → una computadora
-```
-
-Con la caída del precio del hardware y los microprocesadores:
-
-```text
-una persona → una computadora
-```
-
-Las prioridades cambiaron. Ya no se diseñaba todo para 100 usuarios compartiendo una máquina. Comenzaron a importar:
-
-- Interfaces fáciles de usar
-- Gráficos, teclado y mouse
-- Aplicaciones personales
-
-> **Dato curioso:** durante décadas, una organización podía tener **una sola computadora**. Hoy puedes tener laptop, celular, smartwatch, TV, router, automóvil, consola y asistentes de voz, todos ejecutando algún tipo de sistema operativo.
-
----
-
-## 11. 1980–1990: PC, interfaces gráficas y competencia comercial
-
-Empresas como **Apple**, **Microsoft** e **IBM** transformaron el mercado. El sistema operativo pasó de usarse principalmente por científicos, ingenieros, universidades y gobierno, a usarse por prácticamente cualquier persona.
-
-
-
----
-
-## 12. Linux y el mundo moderno
-
-En **1991**, Linus Torvalds comenzó un kernel que se convertiría en **Linux**. Hoy está presente en:
-
-```text
-servidores · cloud · supercomputadoras · routers
-Android · IoT · embedded systems
-```
-
-> **Dato curioso:** Android utiliza el **kernel de Linux**. 
-
----
-
-## 13. Evolución completa
-
-```text
-1940   SIN SISTEMA OPERATIVO — Humanos controlan directamente la máquina
-1950   BATCH PROCESSING — Automatizar secuencias de trabajos
-1960   MULTIPROGRAMACIÓN — Mantener ocupado el CPU
-1960–70 TIME-SHARING — Muchos usuarios interactivos
-1970   UNIX — Procesos + archivos + pipes + portabilidad
-1980   PERSONAL COMPUTERS — Una computadora por usuario
-1990   INTERNET + LINUX + WINDOWS
-2000   MÓVILES + VIRTUALIZACIÓN
-2010+  CLOUD + CONTAINERS
-HOY
-```
-
-Lo importante: las ideas anteriores **no desaparecieron**. Se **acumularon**.
-
----
-
-## 14. De los mainframes a la nube
-
-En los años 60:
-
-```text
-COMPUTADORA CARÍSIMA → muchos usuarios → hay que compartirla eficientemente
-```
-
-Hoy:
-
-```text
-DATACENTER CARÍSIMO → miles de clientes → hay que compartirlo eficientemente
-```
-
-El problema fundamental reaparece. Ahora utilizamos:
-
-```text
-máquinas virtuales · contenedores · orquestadores · cloud computing
-```
-
-> AWS y Azure resuelven a escala planetaria algunos de los mismos problemas conceptuales que los mainframes intentaban resolver hace décadas.
-
-### Virtualización moderna
-
-```mermaid
-block-beta
-    columns 1
-    App["Aplicaciones"]
-    Cont["Containers"]
-    Lin["Linux"]
-    VM["Máquina Virtual"]
-    Hyp["Hypervisor"]
-    Hard["Hardware"]
-```
-
-Seguimos preguntando: **¿Cómo compartir hardware sin que un usuario interfiera con otro?**
-
----
-
-## 15. Práctica en Linux
+## Práctica en Linux
 
 Las ideas históricas siguen vivas en tu sistema. Explora con estos comandos.
 
@@ -713,7 +713,7 @@ Hardware
 
 ---
 
-## 16. Preguntas para reflexionar
+## Preguntas para reflexionar
 
 1. Una computadora ejecuta un programa que solicita información al disco y debe esperar. Hay otro programa listo. **¿Qué debería hacer el sistema operativo?**
 
@@ -725,7 +725,7 @@ Hardware
 
 ---
 
-## 17. Ejercicios
+## Ejercicios
 
 ### Ejercicio 1 — Observar multiprogramación
 
@@ -816,7 +816,7 @@ Has redescubierto aproximadamente 20 años de investigación en sistemas operati
 
 
 
-## 19. ¿Por qué importa esta historia?
+## ¿Por qué importa esta historia?
 
 Porque permite entender **por qué existen las cosas**, no solo memorizar nombres:
 
@@ -828,7 +828,7 @@ Muchos usuarios + recursos compartidos → permissions
 
 ---
 
-## 20. Terminología
+## Terminología
 
 | Término | Definición |
 |---------|------------|
@@ -849,7 +849,7 @@ Muchos usuarios + recursos compartidos → permissions
 
 ---
 
-## 21. Tarea
+## Tarea
 
 ### ¿Por qué existe esta característica?
 
