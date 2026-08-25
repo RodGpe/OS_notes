@@ -111,6 +111,18 @@ Computadoras como **Colossus** (británicos, descifrado de comunicaciones aleman
 
 > **Dato curioso:** ENIAC pesaba aproximadamente **30 toneladas** y utilizaba alrededor de **18,000 tubos de vacío**. Hoy, un teléfono tiene millones de veces más capacidad computacional.
 
+
+>En 1936 **Alan Turing**  definió la **máquina de Turing**, modelo abstracto que formaliza qué significa *computar*. Una máquina de Turing **M = (Q, Σ, Γ, δ, q₀, F)** consta de:
+>
+>1. **Q** — conjunto finito de **estados** internos.
+>2. **Σ** — **alfabeto de entrada** (símbolos que puede leer).
+>3. **Γ** — **alfabeto de la cinta** (Σ ⊆ Γ), incluyendo un símbolo en blanco.
+>4. **δ** — **función de transición** δ: Q × Γ → Q × Γ × {L, R} que, dado el estado actual y el símbolo bajo el cabezal, indica el nuevo estado, el símbolo a escribir y si el cabezal se mueve a la **izquierda (L)** o **derecha (R)**.
+>5. **q₀** — **estado inicial**.
+>6. **F** — conjunto de **estados finales** (aceptación).
+>
+>La máquina opera sobre una **cinta infinita** dividida en celdas, con un **cabezal de lectura/escritura** que ejecuta δ paso a paso. Este modelo demostró que existen problemas **indecidibles** y estableció que cualquier computadora digital es, en esencia, equivalente a una máquina de Turing — la base teórica de los sistemas operativos y de toda la informática.
+
 ### El problema económico
 
 ```text
@@ -143,6 +155,37 @@ JOB A → JOB B → JOB C → JOB D
 
 **Analogía:** en una lavandería no lavas una camiseta, esperas, lavas otra, esperas… Agrupas el trabajo. Eso es un **batch**.
 
+### El monitor residente
+
+El **monitor residente** (*resident monitor*) surgió a mediados de los **años 50** en los **centros de cómputo con mainframes** de Estados Unidos: laboratorios gubernamentales, universidades y empresas como **IBM** y **UNIVAC** que vendían máquinas enormes y carísimas durante la Guerra Fría.
+
+En un principio, un **operador humano** cargaba cada programa, lo ejecutaba y preparaba el siguiente. Eso dejaba al CPU esperando. La solución fue un programa pequeño que **permanecía siempre en memoria** — de ahí *residente* — y automatizaba la secuencia de trabajos.
+
+![](batch.png)
+
+**¿Qué hacía?**
+
+1. **Cargar** el siguiente trabajo desde tarjetas perforadas o cinta magnética.
+2. **Transferir el control** al programa del usuario.
+3. **Recuperar el control** cuando el trabajo terminaba (o fallaba).
+4. **Gestionar la E/S** básica — lectura de entrada, impresión de salida — sin intervención humana entre trabajos.
+5. **Pasar al siguiente** trabajo de la cola automáticamente.
+
+```text
+Antes (sin monitor)              Con monitor residente
+───────────────────              ─────────────────────
+humano carga programa            monitor carga programa
+humano inicia ejecución          monitor inicia ejecución
+humano prepara el siguiente      monitor pasa al siguiente solo
+CPU espera al operador           CPU sigue trabajando
+```
+
+Por eso muchos historiadores lo consideran el **primer sistema operativo primitivo**: no era una aplicación que resolvía un cálculo, sino **software cuyo trabajo era administrar otros programas**.
+
+Los trabajos se agrupaban en **lotes** sobre cinta magnética con una máquina auxiliar más barata; luego el mainframe los procesaba como un flujo continuo. El tiempo entre entregar un programa y recibir el resultado podía ser **horas o hasta un día entero**.
+
+> **Dato curioso:** el monitor residente no tenía procesos, archivos ni usuarios interactivos como Linux hoy. Solo una cola de trabajos y reglas simples para pasar de uno al otro. Pero esa idea — *un programa permanente que coordina el resto* — es el germen de todo sistema operativo moderno.
+
 ### Programar era frustrante
 
 Imagina escribir `printf("Hola mundo\n");`, entregar tu trabajo y, dos horas después, recibir:
@@ -169,6 +212,8 @@ CPU: ejecutando ██████████ | esperando I/O ............... |
 
 ![](memory_speed.png)
 
+Descripción de registros x64: https://wiki.osdev.org/CPU_Registers_x86-64
+
 ![](cpu_vs_io.png)
 Pero hay otro programa esperando. Entonces surge la idea:
 
@@ -176,18 +221,7 @@ Pero hay otro programa esperando. Entonces surge la idea:
 
 Así nace la **multiprogramación**. En memoria pueden existir varios programas:
 
-```text
-RAM
-+---------------------+
-| Sistema Operativo   |
-+---------------------+
-| Programa A          |
-+---------------------+
-| Programa B          |
-+---------------------+
-| Programa C          |
-+---------------------+
-```
+![](multiprog.gif)
 
 Ejemplo:
 
@@ -225,17 +259,7 @@ Esto se llama **polling** y es ineficiente.
 
 Con una **interrupción**, el dispositivo avisa al CPU:
 
-```text
-             INTERRUPCIÓN
-                  ▲
-+----------+      │
-|  Disco   |──────┘
-+----------+
-                  ▼
-              +-------+
-              |  CPU  |
-              +-------+
-```
+![](interrupt.png)
 
 El CPU detiene temporalmente lo que hace y transfiere control al sistema operativo.
 
@@ -479,7 +503,7 @@ No solo **usas** el sistema operativo: puedes **observarlo por dentro**. Eso era
 
 ```text
 1940   SIN SISTEMA OPERATIVO — Humanos controlan directamente la máquina
-1950   BATCH PROCESSING — Automatizar secuencias de trabajos
+1950   BATCH PROCESSING — Monitor residente, tarjetas perforadas
 1960   MULTIPROGRAMACIÓN — Mantener ocupado el CPU
 1960–70 TIME-SHARING — Muchos usuarios interactivos
 1970   UNIX — Procesos + archivos + pipes + portabilidad
@@ -920,6 +944,7 @@ Muchos usuarios + recursos compartidos → permissions
 | **Process** | Programa en ejecución |
 | **Program** | Código ejecutable almacenado |
 | **Batch Processing** | Procesamiento automático de grupos de trabajos |
+| **Monitor residente** | Programa permanente en memoria que carga y ejecuta trabajos en secuencia; precursor del SO |
 | **Multiprogramming** | Mantener múltiples programas disponibles para utilizar mejor el CPU |
 | **Time-sharing** | Compartir rápidamente CPU entre múltiples procesos o usuarios |
 | **Interrupt** | Evento que provoca que la CPU atienda al SO o a un dispositivo |
