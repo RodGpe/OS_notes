@@ -221,7 +221,7 @@ Pero hay otro programa esperando. Entonces surge la idea:
 
 Así nace la **multiprogramación**. En memoria pueden existir varios programas:
 
-![](multiprog.gif)
+
 
 Ejemplo:
 
@@ -287,6 +287,8 @@ Como el cambio ocurre rápidamente, cada usuario tiene la ilusión de utilizar l
 
 **Idea clave:** un scheduler reparte el CPU en intervalos cortos, similar a turnarse con un recurso compartido muy rápido.
 
+![](multiprog.gif)
+
 ---
 
 ## Contexto: Guerra Fría y redes
@@ -325,6 +327,11 @@ Comienza el desarrollo de UNIX
 UNIX comenzó a desarrollarse en **Bell Labs**, con figuras fundamentales como **Ken Thompson** y **Dennis Ritchie**.
 
 UNIX introdujo o popularizó ideas que siguen siendo centrales:
+
+1. **Time-sharing interactivo** — varios usuarios pueden usar la máquina al mismo tiempo, escribir comandos y recibir respuestas al instante, en lugar de entregar trabajos y esperar horas.
+2. **Todo es un archivo** — discos, teclados, pantallas y otros dispositivos se tratan de forma uniforme, como si fueran archivos. Eso simplifica cómo los programas acceden al hardware.
+3. **Pipes y herramientas pequeñas** — en lugar de un solo programa enorme, Unix propuso muchos programas sencillos que hacen una cosa bien y se pueden encadenar.
+4. **Portabilidad con C** — al reescribir Unix en el lenguaje C, el mismo sistema pudo correr en distintas computadoras.
 
 ```text
 procesos · archivos · pipes · shell
@@ -692,7 +699,6 @@ proceso         →  CPU
 archivo         →  bloques de almacenamiento
 memoria virtual →  RAM
 socket          →  hardware de red
-thread          →  tiempo de CPU
 ```
 
 ---
@@ -729,6 +735,10 @@ Observa: Architecture, CPU(s), Core(s), Thread(s), Virtualization.
 
 ```bash
 free -h
+
+lsblk  (block devices)
+lspci
+lsmod
 ```
 
 Ejemplo de salida:
@@ -762,7 +772,7 @@ nproc
 
 **Pregunta:** Si tienes, por ejemplo, 327 procesos y solo 8 CPUs lógicos, ¿cómo es posible?
 
-Respuesta: **scheduling + procesos esperando I/O + multiprogramación.**
+
 
 ### Demostración en C — el concepto de proceso
 
