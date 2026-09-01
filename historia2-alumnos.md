@@ -593,6 +593,14 @@ Fetch → Decode → Execute → Fetch → ...
 
 Una CPU entiende **instrucciones máquina**. No entiende directamente conceptos como Chrome, Spotify, Word, Docker, archivo, usuario, ventana o proceso. Estos son conceptos construidos mediante software.
 
+Registros y cómo se utilizan en linux.
+https://math.hws.edu/eck/cs220/f22/registers.html
+
+
+`lscpu`
+
+endianess
+https://bytebytego.com/guides/big-endian-vs-little-endian/
 #### Memria principal - RAM
 
 La RAM almacena temporalmente instrucciones y datos que están siendo utilizados:
@@ -725,6 +733,7 @@ Las ideas históricas siguen vivas en tu sistema. Explora con estos comandos.
 
 ```bash
 lscpu
+nproc
 ```
 
 Observa: Architecture, CPU(s), Core(s), Thread(s), Virtualization.
@@ -735,10 +744,7 @@ Observa: Architecture, CPU(s), Core(s), Thread(s), Virtualization.
 
 ```bash
 free -h
-
-lsblk  (block devices)
-lspci
-lsmod
+sudo dmidecode --type memory
 ```
 
 Ejemplo de salida:
@@ -772,59 +778,15 @@ nproc
 
 **Pregunta:** Si tienes, por ejemplo, 327 procesos y solo 8 CPUs lógicos, ¿cómo es posible?
 
-
-
-### Demostración en C — el concepto de proceso
-
-Archivo `process.c`:
-
-```c
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-
-int main(void)
-{
-    pid_t pid = getpid();
-
-    if (pid <= 0) {
-        fprintf(stderr, "No fue posible obtener un PID válido\n");
-        return EXIT_FAILURE;
-    }
-
-    printf("Hola. Soy el proceso %ld\n", (long)pid);
-
-    return EXIT_SUCCESS;
-}
-```
-
-Compilar y ejecutar:
+### Ver procesos
 
 ```bash
-gcc -Wall -Wextra process.c -o process
-./process
-./process
+lsblk  (block devices)
+lspci
+lsmod
 ```
 
-Cada ejecución puede mostrar un PID diferente (por ejemplo, 18231 y luego 18234). **¿De dónde salió ese PID?** El kernel lo asignó al proceso: una abstracción fundamental del SO.
 
-### System calls con strace
-
-```bash
-strace ./process
-```
-
-Un programa aparentemente trivial genera muchas interacciones con el sistema operativo:
-
-```text
-Programa
-    │ system calls
-    ▼
-Kernel
-    │
-    ▼
-Hardware
-```
 
 ---
 
@@ -840,49 +802,8 @@ Hardware
 
 ---
 
-## Ejercicios
 
-### Ejercicio 1 — Observar multiprogramación
-
-Archivo `worker.c`:
-
-```c
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-
-int main(void)
-{
-    for (int i = 0; i < 20; i++) {
-
-        printf("PID %ld → iteración %d\n",
-               (long)getpid(), i);
-
-        fflush(stdout);
-
-        if (usleep(100000) != 0) {
-            perror("usleep");
-            return EXIT_FAILURE;
-        }
-    }
-
-    return EXIT_SUCCESS;
-}
-```
-
-Compilar y ejecutar tres instancias en paralelo:
-
-```bash
-gcc -Wall -Wextra worker.c -o worker
-./worker &
-./worker &
-./worker &
-wait
-```
-
-Los resultados se mezclarán. El orden específico **no está garantizado**. **¿Por qué?** (Concepto: scheduling y concurrencia.)
-
-### Ejercicio 2 — Hardware vs. abstracciones
+###  Hardware vs. abstracciones
 
 Ejecuta:
 
@@ -903,7 +824,7 @@ Responde:
 6. ¿Qué elementos corresponden a hardware?
 7. ¿Qué elementos corresponden a abstracciones creadas por el SO?
 
-### Ejercicio 3 — Reinventemos el sistema operativo
+### Reinventemos el sistema operativo
 
 **Escenario (año 1965):**
 
@@ -927,19 +848,10 @@ identificar usuarios          → Permissions
 
 Has redescubierto aproximadamente 20 años de investigación en sistemas operativos.
 
----
 
 
 
-## ¿Por qué importa esta historia?
 
-Porque permite entender **por qué existen las cosas**, no solo memorizar nombres:
-
-```text
-Muchos programas + pocos CPUs     → scheduler
-Muchos procesos + RAM limitada    → virtual memory
-Muchos usuarios + recursos compartidos → permissions
-```
 
 ---
 
@@ -951,7 +863,7 @@ Muchos usuarios + recursos compartidos → permissions
 | **Software** | Instrucciones y programas ejecutados por el hardware |
 | **Operating System** | Software que administra recursos y proporciona abstracciones |
 | **Kernel** | Parte privilegiada y central del sistema operativo |
-| **Process** | Programa en ejecución |
+| **Process** | Programa en ejecución junto con su contexto de ejecución|
 | **Program** | Código ejecutable almacenado |
 | **Batch Processing** | Procesamiento automático de grupos de trabajos |
 | **Monitor residente** | Programa permanente en memoria que carga y ejecuta trabajos en secuencia; precursor del SO |

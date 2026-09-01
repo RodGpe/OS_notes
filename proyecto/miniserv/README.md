@@ -42,6 +42,9 @@ MiniServ iniciado
 ```bash
 strace -e trace=write ./miniserv
 ```
+## Observar ELF file
+readelf -h miniserv
+file miniserv
 
 ## Limpiar
 
@@ -59,8 +62,3 @@ miniserv/
 ├── include/       ← headers compartidos (semanas futuras)
 └── README.md
 ```
-
-## Autor
-
-- Nombre: _[completar]_
-- Curso: Sistemas Operativos
