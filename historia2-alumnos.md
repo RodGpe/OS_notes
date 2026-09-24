@@ -7,9 +7,9 @@
 
 ## Idea central
 
-La historia de los sistemas operativos no es solo una lista de fechas y nombres. Es la historia de **problemas que los ingenieros y computólogos tuvieron que resolver** en cada época:
+La historia de los sistemas operativos es la historia de **problemas que los ingenieros y computólogos tuvieron que resolver** en cada época:
 
-> **¿Qué problema intentaban resolver los ingenieros en cada época?**
+> **¿Qué problema intentaban resolver  en cada época?**
 
 ### Evolución de los sistemas operativos
 
@@ -136,7 +136,7 @@ CPU trabajando:        ████
 CPU esperando humanos: ██████████████████████████████
 ```
 
-Los ingenieros comenzaron a preguntarse: **¿Cómo podemos mantener ocupada la máquina?**
+Las personas  comenzaron a preguntarse: **¿Cómo podemos mantener ocupada la máquina?**
 
 ---
 
@@ -196,7 +196,6 @@ COMPILATION ERROR
 
 Olvidaste un `;`. Corriges, vuelves a entregar y esperas otra vez.
 
-Cada vez que tu compilador marca un error en 0.2 segundos, agradece no estar programando en 1955.
 
 ---
 
@@ -212,7 +211,9 @@ CPU: ejecutando ██████████ | esperando I/O ............... |
 
 ![](memory_speed.png)
 
-Descripción de registros x64: https://wiki.osdev.org/CPU_Registers_x86-64
+Descripción de registros x64: 
+
+https://wiki.osdev.org/CPU_Registers_x86-64
 
 ![](cpu_vs_io.png)
 Pero hay otro programa esperando. Entonces surge la idea:
@@ -291,20 +292,6 @@ Como el cambio ocurre rápidamente, cada usuario tiene la ilusión de utilizar l
 
 ---
 
-## Contexto: Guerra Fría y redes
-
-Después de la Segunda Guerra Mundial comenzó una enorme competencia tecnológica entre Estados Unidos y la Unión Soviética. La informática dejó de ser solo una herramienta científica y se volvió estratégica:
-
-```text
-misiles · radar · defensa aérea · satélites
-criptografía · simulación · comunicaciones · exploración espacial
-```
-
-### Sputnik (1957)
-
-Cuando la Unión Soviética lanzó **Sputnik 1**, causó una enorme conmoción en Estados Unidos. La percepción era: *"Los soviéticos nos están ganando tecnológicamente."* Estados Unidos aumentó fuertemente la inversión en ciencia e ingeniería. En este ambiente surgió **ARPA** (después DARPA).
-
-> **Dato curioso:** una consecuencia indirecta de esta competencia fue el desarrollo de redes. En **1969** comenzó a operar **ARPANET**, uno de los grandes antecedentes técnicos de Internet.
 
 ---
 
@@ -400,7 +387,7 @@ Las prioridades cambiaron. Ya no se diseñaba todo para 100 usuarios compartiend
 - Gráficos, teclado y mouse
 - Aplicaciones personales
 
-> **Dato curioso:** durante décadas, una organización podía tener **una sola computadora**. Hoy puedes tener laptop, celular, smartwatch, TV, router, automóvil, consola y asistentes de voz, todos ejecutando algún tipo de sistema operativo.
+
 
 ---
 
