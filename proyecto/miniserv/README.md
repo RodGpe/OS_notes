@@ -2,63 +2,48 @@
 
 Servidor TCP/HTTP multiproceso en C sobre Linux. Proyecto incremental del curso de **Sistemas Operativos**.
 
-## Estado actual (Semana 1 — V0)
+Las versiones viven en **carpetas** (`v0`, `v1`, …): cada una compila su propio binario `miniserv` dentro de esa carpeta.
 
-Programa mínimo que imprime un mensaje de arranque. Aún no escucha conexiones de red.
+## Versiones
 
-## Requisitos
+| Carpeta | Semana | Descripción |
+| ------- | ------ | ----------- |
+| [`v0/`](v0/) | 1 | Imprime `MiniServ iniciado` y termina |
+| [`v1/`](v1/) | 2 | TCP echo secuencial, loop `accept`, puerto 8080 |
 
-- Linux
-- `gcc`
-- `make`
-- `strace` (opcional, para observar system calls)
-
-## Compilación
+## Uso (ejemplo V1)
 
 ```bash
+cd v1
 make
-```
-
-Equivalente manual:
-
-```bash
-gcc -Wall -Wextra -std=c11 src/server.c -o miniserv
-```
-
-## Ejecución
-
-```bash
 ./miniserv
 ```
 
-Salida esperada:
-
-```text
-MiniServ iniciado
-```
-
-## Observar system calls
+Cliente:
 
 ```bash
-strace -e trace=write ./miniserv
-```
-## Observar ELF file
-readelf -h miniserv
-file miniserv
-
-## Limpiar
-
-```bash
-make clean
+echo test | nc 127.0.0.1 8080
 ```
 
-## Estructura del proyecto
+## Requisitos
+
+- Linux, `gcc`, `make`
+- `strace`, `nc`, `ss` (opcional, para laboratorio)
+
+## Estructura
 
 ```text
 miniserv/
-├── Makefile
-├── src/
-│   └── server.c
-├── include/       ← headers compartidos (semanas futuras)
-└── README.md
+├── README.md       ← este archivo
+├── include/        ← headers compartidos (semanas futuras)
+├── v0/
+│   ├── Makefile
+│   └── src/server.c
+└── v1/
+    ├── Makefile
+    └── src/server.c
 ```
+
+## Nota sobre la raíz `miniserv/`
+
+El código activo está en `v0/`, `v1/`, etc. Compila siempre desde la carpeta de la versión que quieras probar.

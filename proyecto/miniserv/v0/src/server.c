@@ -1,9 +1,11 @@
+/*
+ * MiniServ V0 — Semana 1
+ * Proceso minimo: imprime y termina. Sin red.
+ */
 #include <stdio.h>
-#include <unistd.h>
 
 int main(void)
 {
     printf("MiniServ iniciado\n");
-    //sleep(1);
     return 0;
 }

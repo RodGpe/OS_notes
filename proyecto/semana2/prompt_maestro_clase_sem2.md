@@ -16,8 +16,6 @@ Cada semana del curso consta de:
 
 ---
 
-
-
 # 1. Contexto de los estudiantes
 
 Los estudiantes ya conocen:
@@ -50,8 +48,6 @@ Cuando sea necesario introducir conceptos de redes para MiniServ, explica solame
 El curso **no es un curso de redes**. Los sockets son una herramienta para estudiar el comportamiento del sistema operativo.
 
 ---
-
-
 
 # 2. Filosofía pedagógica
 
@@ -122,8 +118,6 @@ La pregunta recurrente durante el curso debe ser:
 > ¿Qué problema de nuestro servidor resuelve este mecanismo del sistema operativo?
 
 ---
-
-
 
 # 3. Proyecto central: MiniServ
 
@@ -217,8 +211,6 @@ además de conceptos como:
 
 ---
 
-
-
 # 4. Evolución de MiniServ
 
 La progresión general del proyecto es:
@@ -278,11 +270,7 @@ Servidor final
 
 ---
 
-
-
 # 5. Plan general de las 16 semanas
-
-
 
 ## Semana 1 — Arquitectura del SO y llamadas al sistema
 
@@ -310,8 +298,6 @@ MiniServ:
 
 ---
 
-
-
 ## Semana 2 — File descriptors, sockets e I/O bloqueante
 
 Conceptos:
@@ -336,8 +322,6 @@ MiniServ:
 
 ---
 
-
-
 ## Semana 3 — Creación y administración de procesos
 
 Conceptos:
@@ -358,8 +342,6 @@ MiniServ:
 - pasar del servidor secuencial a **fork-per-client**.
 
 ---
-
-
 
 ## Semana 4 — Herencia de recursos y procesos zombie
 
@@ -382,8 +364,6 @@ MiniServ:
 
 ---
 
-
-
 ## Semana 5 — Señales
 
 Conceptos:
@@ -404,8 +384,6 @@ MiniServ:
 - cierre ordenado del servidor.
 
 ---
-
-
 
 ## Semana 6 — Scheduling y cambios de contexto
 
@@ -430,8 +408,6 @@ MiniServ:
 
 ---
 
-
-
 ## Semana 7 — IPC mediante pipes
 
 Conceptos:
@@ -450,8 +426,6 @@ MiniServ:
 - workers envían mensajes mediante IPC.
 
 ---
-
-
 
 ## Semana 8 — Race conditions y sincronización
 
@@ -472,8 +446,6 @@ MiniServ:
 - demostrar condiciones de carrera.
 
 ---
-
-
 
 ## Semana 9 — Memoria compartida
 
@@ -498,8 +470,6 @@ active_clients
 
 ---
 
-
-
 ## Semana 10 — Memoria virtual y Copy-on-Write
 
 Conceptos:
@@ -522,8 +492,6 @@ MiniServ:
 
 ---
 
-
-
 ## Semana 11 — Prefork worker pool
 
 Conceptos:
@@ -544,8 +512,6 @@ MiniServ:
 debe crear un master y cuatro workers persistentes.
 
 ---
-
-
 
 ## Semana 12 — Filesystem
 
@@ -568,8 +534,6 @@ MiniServ:
 
 ---
 
-
-
 ## Semana 13 — I/O bloqueante, nonblocking y multiplexación
 
 Conceptos:
@@ -589,8 +553,6 @@ MiniServ:
 - `epoll` como extensión avanzada.
 
 ---
-
-
 
 ## Semana 14 — Administración de recursos, robustez y seguridad
 
@@ -616,8 +578,6 @@ MiniServ:
 - evitar acceso fuera de `www/`.
 
 ---
-
-
 
 ## Semana 15 — Supervisión y tolerancia a fallas
 
@@ -646,8 +606,6 @@ Worker nuevo
 ```
 
 ---
-
-
 
 ## Semana 16 — Desempeño e integración final
 
@@ -688,8 +646,6 @@ ss
 
 ---
 
-
-
 # 6. Formato obligatorio para desarrollar cada semana
 
 Utiliza la información específica de la semana proporcionada al final de este prompt y genera **las dos sesiones completas de 90 minutos**.
@@ -697,8 +653,6 @@ Utiliza la información específica de la semana proporcionada al final de este 
 El resultado debe contener las siguientes secciones.
 
 ---
-
-
 
 ## A. Visión general de la semana
 
@@ -719,8 +673,6 @@ Utiliza formulaciones como:
 
 ---
 
-
-
 ### Motivación
 
 Presenta primero un problema concreto.
@@ -733,8 +685,6 @@ Explica:
 - qué mecanismo del SO permitirá estudiarlo o resolverlo.
 
 ---
-
-
 
 ### Conexión con semanas anteriores
 
@@ -754,19 +704,16 @@ nuevo MiniServ
 
 ---
 
-
-
 # 7. Clase  — 120 min
 
 
-| Actividad                |
-| ------------------------ |
-| Problema motivador       |
-| Concepto teórico         |
-| Demostración             |
-| Ejercicio                |
-| Discusión y cierre       |
-
+| Actividad           |
+| ------------------- |
+| Problema motivador  |
+| Concepto teórico   |
+| Demostración       |
+| Ejercicio           |
+| Discusión y cierre |
 
 Adapta los tiempos según el tema.
 
@@ -791,10 +738,7 @@ Puede incluir:
 - predicción de comportamiento;
 - comparación de resultados.
 
-
 ---
-
-
 
 # 9. Explicación teórica
 
@@ -813,8 +757,6 @@ Para cada concepto explica:
 No asumas que el estudiante conoce previamente el concepto.
 
 ---
-
-
 
 # 10. Diagramas
 
@@ -852,8 +794,6 @@ Cada diagrama debe tener una explicación.
 No incluyas diagramas puramente decorativos.
 
 ---
-
-
 
 # 11. Demostraciones en C
 
@@ -900,8 +840,6 @@ Ejemplo:
 ./demo
 ```
 
-
-
 ### Salida esperada
 
 Incluye una salida representativa.
@@ -917,8 +855,6 @@ Indica explícitamente si pueden variar:
 - direcciones;
 - resultados de una race condition.
 
-
-
 ### Explicación paso a paso
 
 Describe:
@@ -931,8 +867,6 @@ Describe:
 6. qué resultado observamos.
 
 ---
-
-
 
 # 12. Herramientas Linux
 
@@ -964,8 +898,6 @@ Para cada comando explica:
 - qué debería identificar el alumno.
 
 ---
-
-
 
 # 13. Integración con MiniServ
 
@@ -1009,8 +941,6 @@ MiniServ nuevo
 
 ---
 
-
-
 # 14. Milestone semanal
 
 Define exactamente qué deben implementar los estudiantes.
@@ -1033,8 +963,6 @@ Por ejemplo:
 
 > En este milestone no se permite utilizar threads.
 
-
-
 ## Criterios de aceptación
 
 Usa un checklist como:
@@ -1047,15 +975,11 @@ Usa un checklist como:
 [ ] Cierra correctamente los file descriptors
 ```
 
-
-
 ## Pruebas
 
 Incluye comandos concretos para comprobar el milestone.
 
 ---
-
-
 
 # 15. Actividades de clase
 
@@ -1072,8 +996,6 @@ Para cada una proporciona:
 Las preguntas deben requerir comprensión, no solamente memorización.
 
 ---
-
-
 
 ### 2 ejercicios cortos de programación
 
@@ -1092,8 +1014,6 @@ Incluye:
 
 ---
 
-
-
 ### 1 actividad de predicción
 
 Presenta código o una situación y pregunta:
@@ -1107,8 +1027,6 @@ Después explica:
 - por qué.
 
 ---
-
-
 
 # 16. Errores y misconceptions
 
@@ -1134,8 +1052,6 @@ Incluye tanto:
 
 ---
 
-
-
 # 17. Conexión profesional
 
 Explica dónde aparecen estos mecanismos en sistemas reales.
@@ -1159,8 +1075,6 @@ No conviertas esta sección en publicidad o historia empresarial.
 
 ---
 
-
-
 # 18. Historia y fun facts
 
 Incluye entre  **datos interesantes** cuando realmente aporten contexto.
@@ -1178,8 +1092,6 @@ Agrega contexto geopolítico únicamente cuando ayude genuinamente a comprender 
 
 ---
 
-
-
 # 19. Tarea semanal
 
 Diseña una tarea directamente relacionada con el contenido de la semana y, preferentemente, con MiniServ.
@@ -1196,8 +1108,6 @@ Incluye:
 - preguntas para un pequeño reporte.
 
 ---
-
-
 
 # 20. Cierre de la semana
 
@@ -1224,15 +1134,11 @@ mecanismo
 MiniServ
 ```
 
-
-
 ## Qué cambia en la siguiente semana
 
 Explica brevemente qué nuevo problema queda abierto y cómo conduce naturalmente al siguiente tema del curso.
 
 ---
-
-
 
 # 21. Requisitos técnicos generales
 
@@ -1287,8 +1193,6 @@ por encima de detalles secundarios de HTTP o redes.
 
 ---
 
-
-
 # 22. Continuidad obligatoria
 
 No desarrolles esta semana como una clase independiente.
@@ -1303,50 +1207,28 @@ La sensación que debe quedar al estudiante cada semana es:
 
 > Ahora entiendo una capa más de lo que realmente está haciendo MiniServ y el sistema operativo debajo de él.
 
----
+## 
 
+Semana a desarrollar
 
+## Semana 2 — File descriptors, sockets e I/O bloqueante
 
-# ÚNICA SECCIÓN QUE SE MODIFICA PARA CADA SEMANA
+Conceptos:
 
+- file descriptors;
+- stdin;
+- stdout;
+- stderr;
+- `read`;
+- `write`;
+- `close`;
+- I/O bloqueante;
+- sockets;
+- `socket`;
+- `bind`;
+- `listen`;
+- `accept`.
 
+MiniServ:
 
-## Semana a desarrollar
-
-**Semana:** [NÚMERO]
-
-**Nombre de la semana:** [NOMBRE]
-
-**Temas principales:**
-
-- [TEMA 1]
-- [TEMA 2]
-- [TEMA 3]
-- [TEMA 4]
-- [TEMA 5]
-
-**MiniServ al iniciar la semana:**
-
-[Describe brevemente qué versión de MiniServ ya tienen los estudiantes y qué funcionalidades fueron implementadas durante las semanas anteriores.]
-
-**Problema que motiva esta semana:**
-
-[Describe la limitación concreta que ahora aparece en MiniServ.]
-
-**Milestone que debe existir al terminar la semana:**
-
-[Describe exactamente qué nueva funcionalidad o modificación arquitectónica deberán implementar.]
-
-**Conceptos de semanas anteriores que puedes asumir:**
-
-- [CONCEPTO 1]
-- [CONCEPTO 2]
-- [CONCEPTO 3]
-
-**Conceptos que NO debes asumir todavía:**
-
-- [CONCEPTO FUTURO 1]
-- [CONCEPTO FUTURO 2]
-- [CONCEPTO FUTURO 3]
-
-Genera el material completo de esta semana siguiendo todas las instrucciones anteriores.
+- servidor TCP secuencial
