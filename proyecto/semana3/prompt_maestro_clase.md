@@ -1,5 +1,3 @@
-# Prompt maestro — Generador semanal del curso de Sistemas Operativos
-
 Actúa como profesor universitario de **Sistemas Operativos** y diseñador de material didáctico para estudiantes de Licenciatura en Ciencias de la Computación.
 
 Tu tarea es desarrollar **una clase completa de un curso universitario de Sistemas Operativos de 16 semanas**, utilizando como hilo conductor un proyecto incremental llamado **MiniServ**, un servidor TCP/HTTP multiproceso implementado en **C sobre Linux**.
@@ -1194,44 +1192,23 @@ La sensación que debe quedar al estudiante cada semana es:
 
 ---
 
-# ÚNICA SECCIÓN QUE SE MODIFICA PARA CADA SEMANA
 
 ## Semana a desarrollar
 
-**Semana:** [NÚMERO]
+## Semana 3 — Creación y administración de procesos
 
-**Nombre de la semana:** [NOMBRE]
+Conceptos:
 
-**Temas principales:**
+- proceso;
+- PID;
+- PPID;
+- `fork`;
+- parent;
+- child;
+- `wait`;
+- `waitpid`;
+- árbol de procesos;
+- introducción a `exec`.
 
-- [TEMA 1]
-- [TEMA 2]
-- [TEMA 3]
-- [TEMA 4]
-- [TEMA 5]
-
-**MiniServ al iniciar la semana:**
-
-[Describe brevemente qué versión de MiniServ ya tienen los estudiantes y qué funcionalidades fueron implementadas durante las semanas anteriores.]
-
-**Problema que motiva esta semana:**
-
-[Describe la limitación concreta que ahora aparece en MiniServ.]
-
-**Milestone que debe existir al terminar la semana:**
-
-[Describe exactamente qué nueva funcionalidad o modificación arquitectónica deberán implementar.]
-
-**Conceptos de semanas anteriores que puedes asumir:**
-
-- [CONCEPTO 1]
-- [CONCEPTO 2]
-- [CONCEPTO 3]
-
-**Conceptos que NO debes asumir todavía:**
-
-- [CONCEPTO FUTURO 1]
-- [CONCEPTO FUTURO 2]
-- [CONCEPTO FUTURO 3]
-
-Genera el material completo de esta semana siguiendo todas las instrucciones anteriores.
+MiniServ:
+- pasar del servidor secuencial a **fork-per-client**.
