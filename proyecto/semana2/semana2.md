@@ -1,28 +1,13 @@
 # Semana 2 — File descriptors, sockets e I/O bloqueante
 
-**Curso:** Sistemas Operativos (16 semanas)
-**Proyecto:** MiniServ — servidor TCP/HTTP multiproceso en C sobre Linux
-**Duración:** 1 clase × 120 minutos
 
+**Proyecto:** MiniServ — servidor TCP/HTTP multiproceso en C sobre Linux
 **Pregunta central de la semana:**
 
 > MiniServ V0 imprime y termina. ¿Cómo puede un **mismo proceso** quedarse vivo esperando clientes, y qué ocurre en el kernel cuando `read()` no tiene datos todavía?
 
 ---
 
-# A. Visión general de la semana
-
-## Objetivos de aprendizaje
-
-Al terminar la semana, el estudiante podrá:
-
-1. **Explicar** qué es un file descriptor y cómo el kernel lo usa como índice hacia recursos abiertos (archivos, pipes, sockets, terminales).
-2. **Identificar** el rol de stdin (0), stdout (1) y stderr (2) y cómo `read`/`write`/`close` operan sobre cualquier fd válido.
-3. **Describir** el comportamiento de I/O **bloqueante**: cuándo una syscall se detiene, qué hace el scheduler y por qué el proceso pasa a estado blocked.
-4. **Implementar** la secuencia `socket` → `bind` → `listen` → `accept` para obtener file descriptors de red en un proceso único.
-5. **Diagnosticar** con `strace`, `ss` y `lsof` qué syscalls ejecuta un servidor al escuchar y al atender una conexión.
-6. **Analizar** por qué un servidor secuencial atiende un solo cliente a la vez y qué limitación de concurrencia deja abierta para la Semana 3.
-7. **Implementar** MiniServ V1: servidor TCP secuencial que acepta conexiones, lee bytes del cliente y los devuelve (echo).
 
 ## Motivación
 
@@ -34,77 +19,9 @@ Al terminar la semana, el estudiante podrá:
 
 **Mecanismo del SO que estudiaremos:** file descriptors + syscalls de I/O (`read`, `write`, `close`) + creación de sockets (`socket`, `bind`, `listen`, `accept`) + semántica bloqueante de esas llamadas.
 
-## Conexión con semanas anteriores
-
-```text
-Semana 1: proceso + syscall write + strace
-              │
-              ▼
-problema: MiniServ termina; no escucha ni espera
-              │
-              ▼
-Semana 2: fds + read/write/close + blocking I/O + sockets
-              │
-              ▼
-MiniServ V1: servidor TCP secuencial (un cliente a la vez)
-              │
-              ▼
-Semana 3 (puente): un cliente lento bloquea a los demás → fork()
-```
-
-En la Semana 1 vimos que `write(1, …)` cruza al kernel y que `openat` devuelve un fd nuevo. Esta semana **profundizamos** en esa abstracción y la extendemos a la red. No repetimos la arquitectura user/kernel; la **usamos** cada vez que trazamos `read` o `accept`.
-
----
-
-# 7. Clase — 120 minutos
-
-**Planeación temporal (referencia para el profesor):**
 
 
-| Tiempo       | Hilo narrativo                                            |
-| ------------ | --------------------------------------------------------- |
-| 0–10 min    | Problema motivador: MiniServ debe quedarse vivo y esperar |
-| 10–25 min   | File descriptors: la tabla del proceso                    |
-| 25–40 min   | `read`, `write`, `close` en profundidad                   |
-| 40–55 min   | I/O bloqueante: qué hace el kernel cuando no hay datos   |
-| 55–75 min   | Sockets:`socket`, `bind`, `listen`, `accept`              |
-| 75–95 min   | Laboratorio: MiniServ V1 + observación con herramientas  |
-| 95–110 min  | Ejercicios, predicción y discusión                      |
-| 110–120 min | Síntesis, milestone y puente a la Semana 3               |
-
----
-
-## Bloque 1 — Problema motivador (0–10 min)
-
-**Qué explicar:** retomar MiniServ V0. Un servidor de verdad no imprime y muere: **escucha** un puerto, **acepta** conexiones y **lee/escribe** bytes. Todo eso son syscalls sobre file descriptors.
-
-**Ejemplo en pizarrón:**
-
-```text
-Cliente (otro proceso / otra máquina)
-        │ bytes por la red
-        ▼
-   NIC + stack TCP del kernel
-        │
-        ▼
-   fd del socket conectado en MiniServ
-        │
-        ▼
-   read() / write()  ← mismas syscalls que con archivos
-```
-
-**Preguntas al grupo:**
-
-1. ¿MiniServ V0 realizaba alguna syscall que *esperara* un evento externo? (No: solo `write` y salida.)
-2. Si un programa hace `while(1);` vacío, ¿está “esperando” eficientemente? (No: consume CPU — contraste con blocking I/O.)
-3. ¿Puede nuestro proceso abrir directamente el puerto 8080 como si fuera un archivo en disco? (No: debe pedirlo al kernel vía `socket`/`bind`.)
-
-**Conexión MiniServ:** hoy MiniServ pasará de “proceso que arranca y termina” a “proceso que **bloquea** en `accept()` hasta que alguien llame”.
-
----
-
-## Bloque 2 — File descriptors (10–25 min)
-
+## Bloque 2 — File descriptors 
 **Qué explicar:**
 
 - Un **file descriptor** (fd) es un entero `≥ 0`: índice en la **tabla de descriptores del proceso**.
@@ -112,7 +29,6 @@ Cliente (otro proceso / otra máquina)
 - El proceso **no** ve rutas ni direcciones IP en la syscall: solo el número.
 - Al nacer, todo proceso hereda **0 = stdin**, **1 = stdout**, **2 = stderr**.
 
-**Dibujo en pizarrón:**
 
 ```text
 Proceso MiniServ
@@ -131,13 +47,12 @@ Proceso MiniServ
 
 **Demostración rápida:** ejecutar `demo_fd.c` de la Semana 1 o la variante `demo_fds_std.c` (ver sección 11). Mostrar que `write(1, …)` y `write(archivo_fd, …)` usan la **misma** syscall con distinto fd.
 
-**Pregunta conceptual (integrada):**
 
 > ¿El fd es el archivo en disco?
 
 **Respuesta esperada:** No. Es un handle en la tabla del **proceso**. Dos procesos pueden tener fd `3` apuntando a recursos distintos. Tras `close(3)`, el kernel puede reasignar el número 3 a otro recurso.
 
-**Error frecuente (introducir aquí):** confundir fd con pathname. Corregir: `open("/tmp/x")` devuelve un entero; las operaciones posteriores usan ese entero.
+**Error frecuente:** confundir fd con pathname. Corregir: `open("/tmp/x")` devuelve un entero; las operaciones posteriores usan ese entero.
 
 **Herramienta Linux (breve):** en otra terminal, con un proceso en ejecución:
 
@@ -149,9 +64,9 @@ Mostrar `0 -> /dev/pts/...`, `1 -> ...`. Relacionar con la tabla del proceso.
 
 ---
 
-## Bloque 3 — `read`, `write`, `close` (25–40 min)
+## Bloque 3 — `read`, `write`, `close` 
 
-**Qué explicar:**
+
 
 
 | Syscall                 | Rol principal                                                                 |
@@ -164,11 +79,11 @@ Mostrar `0 -> /dev/pts/...`, `1 -> ...`. Relacionar con la tabla del proceso.
 
 - `write` / `read` devuelven el **número de bytes transferidos**, o `-1` en error (`errno`).
 - `read` que devuelve `0` en un socket o pipe: **fin de stream** (peer cerró escritura).
-- Siempre verificar retorno; no asumir que se transfirió `count` completo en una sola llamada (tema que profundizaremos en Semana 14).
+- Siempre verificar retorno; no asumir que se transfirió `count` completo en una sola llamada 
 
 **Contraste** `printf` **vs** `write`**:** `printf` bufferiza en user space (stdio); `write` va al kernel inmediatamente. MiniServ usará `write` (o wrappers mínimos) para control explícito.
 
-**Demostración:** compilar y ejecutar `demo_read_write.c` (sección 11). Trazar con:
+**Demostración:** compilar y ejecutar `demo_read_write.c`. Trazar con:
 
 ```bash
 strace -e trace=read,write,close ./demo_read_write
@@ -183,7 +98,7 @@ strace -e trace=read,write,close ./demo_read_write
 
 ---
 
-## Bloque 4 — I/O bloqueante (40–55 min)
+## Bloque 4 — I/O bloqueante 
 
 **Qué explicar:**
 
@@ -219,7 +134,7 @@ while (1) { }           /* RUNNING: quema CPU */
 read(fd, buf, n);      /* BLOCKED si no hay datos: eficiente */
 ```
 
-**Pregunta de predicción (integrada):**
+**Pregunta:**
 
 > MiniServ V1 está bloqueado en `accept()`. Llega un cliente. ¿MiniServ consume CPU mientras esperaba?
 
@@ -227,15 +142,11 @@ read(fd, buf, n);      /* BLOCKED si no hay datos: eficiente */
 
 **Error frecuente:** “bloqueante = el programa se congeló/crasheó”. Corregir: es comportamiento **normal** y deseado en un servidor secuencial.
 
-**Conexión profesional (breve):** servidores de producción combinan blocking, non-blocking y multiplexación (`poll`/`epoll`, Semana 13). Empezar con blocking hace visible el modelo de estados del proceso.
+**Conexión profesional (breve):** servidores de producción combinan blocking, non-blocking y multiplexación (`poll`/`epoll`, lo véremos después). Empezar con blocking hace visible el modelo de estados del proceso.
 
 ---
 
-## Bloque 5 — Sockets (55–75 min)
-
-**Qué explicar (solo lo necesario para SO):**
-
-Definición en profundidad en **§9.5**. En pizarrón, resumir:
+## Bloque 5 — Sockets
 
 > Un **socket** es un objeto del kernel para comunicar bytes entre endpoints; en el proceso aparece como **file descriptor** y se usa con `read`/`write`/`close` como un archivo o stdin.
 
@@ -260,7 +171,7 @@ close()    → liberar fds cuando ya no se usen
 | `listen_fd` | Puerta de entrada: solo`accept`          |
 | `client_fd` | Conversación con**un** cliente concreto |
 
-**Mínimo de redes (pizarrón):**
+**Mínimo de redes:**
 
 ```text
 127.0.0.1:8080  ← dirección IP + puerto (endpoint local)
@@ -268,7 +179,7 @@ close()    → liberar fds cuando ya no se usen
 AF_INET, SOCK_STREAM  ← familia IPv4, byte stream confiable (TCP)
 ```
 
-**Demostración (en dos pasos):** primero `demo_tcp_server_simple.c` (solo aceptar y enviar mensaje fijo); luego `demo_tcp_server.c` (echo con read/write). Levantar servidor, conectar con:
+**Demostración (en dos pasos):**  `demo_tcp_server.c` (echo con read/write). Levantar servidor, conectar con:
 
 ```bash
 nc 127.0.0.1 8080
@@ -300,7 +211,7 @@ lsof -i :8080             # qué proceso tiene el puerto
 
 ---
 
-## Bloque 6 — Laboratorio MiniServ V1 (75–95 min)
+## Bloque 6 — Laboratorio MiniServ V1 
 
 **Estado inicial:** MiniServ V0 — imprime y termina.
 
@@ -323,7 +234,7 @@ MiniServ V0 (main → printf → exit)
 MiniServ V1 (loop: accept → echo → close client_fd)
 ```
 
-**Código de referencia:** [`miniserv/v1/src/server.c`](../miniserv/v1/src/server.c) (milestone entregable en carpeta `v1/`).
+**Código de referencia:** [`miniserv/v1/src/server.c`](../miniserv/v1/src/server.c) (milestone entregable en carpeta `v1/`). Extensión HTTP secuencial: [`miniserv/v2/`](../miniserv/v2/) (misma arquitectura, respuesta mínima a `GET`).
 
 **Esqueleto guía para implementar en clase** (completar manejo de errores):
 
@@ -417,25 +328,9 @@ int main(void)
 
 ---
 
-## Bloque 7 — Ejercicios, predicción y cierre de clase (95–120 min)
+## Bloque 7 — Ejercicios, predicción y cierre de clase
 
-### Ejercicio corto 1 — Contador de bytes (10–15 min)
 
-**Enunciado:** programa que lee stdin byte a byte con `read(0, &c, 1)` hasta EOF y escribe en stderr cuántos bytes leyó.
-
-**Objetivo:** practicar loop con `read` y fd 2.
-
-**Solución profesor:** ver `demo_byte_count.c` en sección 11.
-
----
-
-### Ejercicio corto 2 — Puerto configurable (15–20 min)
-
-**Enunciado:** modificar MiniServ V1 para leer el puerto desde `argv[1]` (default 8080). Validar que sea número 1–65535.
-
-**Objetivo:** separar configuración sin introducir `fork`.
-
----
 
 ### Actividad de predicción
 
@@ -473,71 +368,6 @@ Archivo `/tmp/x` contiene exactamente 6 bytes.
 
 **Respuesta:** No. Crea un endpoint del kernel. Conexión implica `connect` (cliente) o `accept` (servidor tras `listen`).
 
----
-
-# 9. Explicación teórica
-
-## 9.1 File descriptors
-
-**Qué es:** entero pequeño que indexa la tabla de descriptores abiertos del proceso.
-
-**Por qué existe:** unificar acceso a recursos heterogéneos (archivos, pipes, sockets, dispositivos) bajo las mismas syscalls `read`/`write`/`close`.
-
-**Problema que resuelve:** el programa no necesita saber si escribe a disco, terminal o red; pide al kernel “escribe en el fd 4”.
-
-**Cómo funciona:** al `open`/`socket`/`accept`, el kernel asigna la primera entrada libre en la tabla del proceso y incrementa contadores internos del objeto.
-
-**Rol del kernel:** guarda la tabla por proceso, valida fds en cada syscall, traduce fd → objeto concreto (VFS, socket struct, etc.).
-
-**MiniServ:** `listen_fd` y cada `client_fd` son filas distintas en esa tabla.
-
-**Errores conceptuales:** pensar que cerrar el programa cierra automáticamente todos los fds (el kernel lo hace al exit, pero en servidores de larga vida hay que `close` explícitamente); reutilizar un fd después de `close` sin saber que el número puede reciclarse.
-
-## 9.2 stdin, stdout, stderr
-
-**Qué son:** fds 0, 1 y 2 heredados del padre (normalmente la shell). Conectan el proceso con terminal o redirecciones.
-
-**Por qué existen:** convención POSIX para entrada/salida/diagnóstico sin hardcodear rutas.
-
-**MiniServ:** mensajes de log del servidor pueden ir a stderr (`fd 2`) para no mezclarse con datos enviados al cliente por el socket.
-
-**Error frecuente:** mezclar logs con `write(client_fd, …)` — el cliente recibiría basura de depuración.
-
-## 9.3 `read`, `write`, `close`
-
-**Qué son:** syscalls de I/O genéricas sobre fds.
-
-**Por qué existen:** interfaz uniforme heredada de Unix (“everything is a file”).
-
-**Kernel:** copia datos entre user buffer y kernel buffers/subsystems; para sockets, integra con stack TCP.
-
-**MiniServ:** eco de peticiones = pares read/write sobre `client_fd`.
-
-**Errores:** ignorar retorno; asumir mensaje completo en un solo `read` (TCP es stream: un mensaje puede partirse en varios `read`).
-
-## 9.4 I/O bloqueante
-
-**Qué es:** syscall que no retorna hasta que la operación puede progresar (o ocurre error/señal).
-
-**Por qué existe:** modelo simple: el programador escribe código secuencial sin polling.
-
-**Problema que resuelve:** evitar bucles ocupados (`while(!hay_datos)`).
-
-**Scheduler:** proceso en blocked no compite por CPU; pasa a runnable cuando el kernel marca el fd como listo.
-
-**MiniServ V1:** bloqueo en `accept` y en `read` cuando el cliente no envía.
-
-**Errores:** confundir blocked con deadlock (deadlock es Semana 8, entre procesos que se esperan mutuamente con recursos).
-
-## 9.5 ¿Qué es un socket?
-
-En este curso un **socket** no se define como “protocolo de internet” ni como “HTTP”. Es un **objeto del kernel** que representa un **punto de comunicación** — una forma de enviar y recibir bytes entre dos participantes (dos procesos en la misma máquina, o procesos en máquinas distintas conectadas por red).
-
-### Definición operativa (la que usa MiniServ)
-
-> Un **socket** es un recurso administrado por el kernel que el proceso manipula mediante un **file descriptor**, usando las mismas syscalls `read`, `write` y `close` que ya conoce de archivos y terminales.
-
-Esa unificación no es casual: en Unix/Linux heredamos la idea de que casi todo I/O pasa por **fds** y syscalls genéricas. El socket es **otro tipo de objeto** detrás del entero, igual que un archivo regular o un pipe lo es detrás de su fd.
 
 ### Qué problema resuelve desde Sistemas Operativos
 
@@ -590,9 +420,9 @@ El proceso **no** ve direcciones IP ni puertos como “variables mágicas” en 
 
 Por eso MiniServ V1 — aunque “sea un servidor de red” — es sobre todo un estudio de **procesos**, **fds** e **I/O bloqueante**: el mismo patrón que `read(0, …)` en stdin, con otro tipo de objeto detrás del fd.
 
-### Qué no necesitamos dominar esta semana (redes)
+### Qué  necesitamos dominar esta semana sobre redes
 
-No hace falta diseñar protocolos ni estudiar routing. Basta con tres ideas mínimas:
+Basta con tres ideas mínimas:
 
 1. **127.0.0.1** — loopback (tráfico que no sale de la máquina; útil en laboratorio).
 2. **Puerto** — etiqueta para multiplexar muchos servicios en una IP.
@@ -623,54 +453,7 @@ La API de **sockets BSD** (~1983) unificó la programación de red con el modelo
 
 ---
 
-# 10. Diagramas
-
-## 10.1 Tabla de fds y kernel
-
-```text
-User space                    Kernel space
-──────────                    ────────────
-write(4, buf, n)  ──trap──►  validar fd 4
-                                    │
-                                    ▼
-                              socket send buffer
-                                    │
-                                    ▼
-                              stack TCP / NIC
-```
-
-**Explicación:** el número 4 es local al proceso; el kernel traduce a estructuras internas.
-
-## 10.2 Servidor secuencial — dos clientes
-
-```text
-Tiempo ───────────────────────────────────────►
-
-Cliente A conecta ──► accept ──► read/write A ──► close
-Cliente B conecta ──► (espera en cola kernel) ──► accept ──► ...
-```
-
-**Explicación:** el kernel acepta la conexión de B en cola, pero MiniServ no llama `accept` hasta terminar con A.
-
-## 10.3 Ciclo de vida de fds en MiniServ V1
-
-```text
-socket → listen_fd
-              │
-         bind/listen
-              │
-         accept → client_fd
-              │
-         read/write loop
-              │
-         close(client_fd) ──► listen_fd sigue vivo
-              │
-         accept (otra vuelta)
-```
-
----
-
-# 11. Demostraciones en C
+# Demostraciones en C
 
 Los archivos están en `programas_ejemplo/`. Resumen:
 
@@ -756,6 +539,46 @@ Ninguno.
 
 ---
 
+## 11.4 `demo_polling_read.c` — Polling para obtner información
+
+### Objetivo
+
+Observar proceso en estado de ejecución mientras `read(0, …)` espera. Alto consumo de procesador.
+
+### Compilación
+
+```bash
+gcc -Wall -Wextra demo_polling_read.c -o demo_polling_read
+```
+
+### Ejecución
+
+```bash
+./demo_polling_read
+# escribir una línea y Enter
+```
+
+### Salida esperada
+
+```text
+Esperando entrada (read bloqueante en stdin)...
+Leí 5 bytes: hola
+```
+
+### No determinismo
+
+Timing depende del usuario.
+
+### Explicación paso a paso
+
+1. Mensaje inicial con `write(2, …)`.
+2. modificamos la respuesta de`read(0, …)` para que consulte constantemente por los datos, no bloquea → proceso.
+3. Observar el estado en ejecución y el alto consumo de recursos
+4. Usuario escribe → kernel manda datos al proceso → `read` retorna con datos.
+4. Segundo `write` muestra resultado.
+
+---
+
 ## 11.3 `demo_blocking_read.c` — blocked en stdin
 
 ### Objetivo
@@ -795,48 +618,8 @@ Timing depende del usuario.
 
 ---
 
-## 11.4 `demo_tcp_server_simple.c` — TCP paso 1
 
-### Objetivo
-
-Secuencia socket/bind/listen/accept; dos fds; un `write` fijo al cliente (sin `read`).
-
-### Compilación
-
-```bash
-gcc -Wall -Wextra demo_tcp_server_simple.c -o demo_tcp_server_simple
-```
-
-### Ejecución
-
-Terminal 1:
-
-```bash
-./demo_tcp_server_simple
-```
-
-Terminal 2:
-
-```bash
-nc 127.0.0.1 9090
-```
-
-### Salida esperada (cliente)
-
-```text
-MiniServ demo: conexion aceptada.
-```
-
-### Explicación paso a paso
-
-1. Cuatro syscalls configuran el listener (`listen_fd`).
-2. `accept` bloquea hasta `nc`; devuelve `client_fd`.
-3. Mensaje fijo por `write(client_fd, …)` — demuestra que los datos van por el fd conectado, no por `listen_fd`.
-4. Siguiente demo: agregar `read` y echo.
-
----
-
-## 11.5 `demo_tcp_server.c` — TCP paso 2 (echo)
+## 11.5 `demo_tcp_server.c` — TCP 2 (echo)
 
 ### Objetivo
 
@@ -884,26 +667,6 @@ Números de fd; orden si varios clientes compiten.
 4. `read`/`write` en `client_fd`.
 5. `close` ambos fds al terminar demo (MiniServ mantiene `listen_fd`).
 
----
-
-## 11.6 `demo_byte_count.c` — ejercicio de clase
-
-### Objetivo
-
-Contar bytes desde stdin con `read` de un byte.
-
-### Compilación y ejecución
-
-```bash
-gcc -Wall -Wextra demo_byte_count.c -o demo_byte_count
-echo abcde | ./demo_byte_count
-```
-
-### Salida esperada
-
-```text
-bytes leidos: 5
-```
 
 ---
 
@@ -986,80 +749,8 @@ blocking I/O + sockets (listen_fd / client_fd)
 MiniServ V1 (servidor TCP secuencial echo)
 ```
 
-**Versión del proyecto:** V1. HTTP llegará en V2 (Semana posterior o extensión); esta semana el protocolo es **bytes crudos** (echo TCP).
+**Versión del proyecto:** milestone **V1** (TCP echo). La carpeta [`miniserv/v2/`](../miniserv/v2/) añade HTTP secuencial como paso intermedio antes de `fork` en V3.
 
----
-
-# 14. Milestone semanal — MiniServ V1
-
-## Requisitos funcionales
-
-- Al ejecutar `./miniserv`, el proceso permanece en ejecución.
-- Escucha en TCP puerto 8080 (o el definido en clase).
-- Por cada conexión entrante: lee bytes del cliente y los reenvía (echo) hasta que el cliente cierre.
-- Tras cerrar un cliente, acepta otro.
-- Escribe un mensaje de arranque en stderr (no en el socket del cliente).
-
-## Requisitos técnicos
-
-- Usar `socket`, `bind`, `listen`, `accept`, `read`, `write`, `close`.
-- Compilar con `gcc -Wall -Wextra` vía Makefile.
-- Manejo básico de errores con `perror` o función similar.
-- IPv4 (`AF_INET`), `SOCK_STREAM`.
-
-## Restricciones
-
-- **No** usar `fork`, threads, señales, `select`/`poll`/`epoll`.
-- **No** implementar HTTP completo todavía (opcional mencionar como mejora personal).
-- Un solo proceso: arquitectura secuencial obligatoria.
-
-## Criterios de aceptación
-
-```text
-[ ] Compila con -Wall -Wextra sin warnings
-[ ] ./miniserv queda escuchando (no termina de inmediato)
-[ ] nc 127.0.0.1 8080 recibe echo de lo enviado
-[ ] strace muestra socket, bind, listen, accept, read, write
-[ ] ss -ltnp muestra el puerto en LISTEN
-[ ] Segundo cliente espera mientras el primero está conectado (demostrable)
-[ ] close(client_fd) tras cada conexión; listen_fd permanece abierto
-```
-
-## Pruebas
-
-```bash
-cd miniserv/v1 && make
-
-# Terminal 1
-./miniserv
-
-# Terminal 2
-echo "ping" | nc 127.0.0.1 8080
-# esperado: ping
-
-# Terminal 3 (mientras T2 mantiene nc interactivo abierto)
-nc 127.0.0.1 8080
-# debe bloquear hasta cerrar la sesión en T2
-
-# Observabilidad
-strace -p $(pgrep -n miniserv) -e accept,read,write
-ss -ltnp | grep 8080
-```
-
----
-
-# 15. Actividades de clase
-
-(Incluidas en la sección 7; resumen para el profesor.)
-
-
-| Tipo          | Cantidad | Ubicación en clase      |
-| ------------- | -------- | ------------------------ |
-| Conceptual    | 3+       | Bloques 2, 4, 5, 7       |
-| Programación | 2        | Bloque 7                 |
-| Predicción   | 1        | Bloque 7 (`read` offset) |
-
----
 
 # 16. Errores y misconceptions
 
@@ -1106,148 +797,7 @@ En Unix/Linux, los sockets **son** fds: `read`/`write`/`close` aplican (con sem�
 3. `nc` **(netcat):** herramienta de 1996 aún útil para generar tráfico controlado sin escribir un cliente — ideal para laboratorio de SO.
 4. **Puerto bien conocidos:** 8080 como alternativa HTTP de desarrollo; en producción el kernel distingue listeners por `(IP, puerto, protocolo)`.
 
----
 
-# 19. Tarea semanal
+# NOTAS sobre HTTP
 
-## Objetivo
-
-Entregar MiniServ V1 funcional y reporte de observación con herramientas del SO.
-
-## Descripción
-
-1. Implementar servidor TCP echo según milestone.
-2. Realizar experimentos con dos clientes simultáneos y documentar el comportamiento secuencial.
-3. Capturar evidencia con `strace` y `ss`.
-
-## Requisitos funcionales
-
-- Echo TCP en puerto 8080 (o documentar otro).
-- Mensaje de arranque en stderr.
-
-## Requisitos técnicos
-
-- Syscalls indicadas en milestone; sin `fork`/threads.
-
-## Archivos a entregar
-
-```text
-miniserv/           (código, Makefile, README actualizado)
-reporte-semana2.md
-```
-
-## Ejemplo de ejecución
-
-```bash
-make
-./miniserv &
-sleep 1
-echo "test" | nc 127.0.0.1 8080
-```
-
-## Criterios de aceptación
-
-```text
-[ ] Milestone V1 completo
-[ ] Reporte con captura strace (accept/read/write)
-[ ] Reporte con ss -ltnp
-[ ] Experimento dos clientes documentado
-[ ] Respuestas a preguntas del reporte
-```
-
-## Preguntas para el reporte
-
-1. ¿Qué diferencia observaste entre `listen_fd` y `client_fd` en `strace` o `/proc/<pid>/fd`?
-2. ¿En qué estado apareció MiniServ mientras esperaba en `accept()`? ¿Cómo lo verificaste?
-3. ¿Qué ocurrió con el segundo cliente mientras el primero seguía conectado? ¿En qué capa se encoló la conexión?
-4. ¿Por qué un servidor secuencial no escala a miles de clientes simultáneos? (Un párrafo, sin proponer aún `fork`.)
-
-## Empaquetado
-
-```bash
-tar czf miniserv-semana2.tar.gz miniserv/ reporte-semana2.md
-```
-
----
-
-# 20. Cierre de la semana
-
-## Conceptos fundamentales
-
-1. File descriptor = índice del proceso hacia un recurso del kernel.
-2. stdin (0), stdout (1), stderr (2) son fds heredados.
-3. `read`/`write`/`close` operan sobre cualquier fd válido.
-4. I/O bloqueante = proceso en estado blocked sin consumir CPU en busy-wait.
-5. Socket = recurso de red expuesto como fd.
-6. Servidor: `socket` → `bind` → `listen` → `accept` → `read`/`write` → `close(client)`.
-7. `accept` devuelve un **nuevo** fd por conexión; `listen_fd` permanece.
-8. MiniServ V1 es secuencial: un cliente activo retrasa a los demás.
-9. `strace`, `ss`, `lsof` y `/proc` muestran syscalls, puertos y fds.
-
-## Mapa conceptual
-
-```text
-MiniServ debe esperar clientes
-        │
-        ▼
-file descriptors + blocking read/accept
-        │
-        ▼
-socket API (bind/listen/accept)
-        │
-        ▼
-MiniServ V1 (TCP echo secuencial)
-```
-
-## Qué cambia en la siguiente semana
-
-MiniServ V1 funciona, pero un cliente lento **bloquea** todo el servidor: nadie más es aceptado hasta que termine. Eso no es fallo del kernel; es falta de **concurrencia a nivel proceso**.
-
-**Semana 3 — Creación y administración de procesos:** `fork()` para atender cada cliente en un proceso hijo, introducir `wait`/`waitpid` y el árbol de procesos de MiniServ.
-
-**Pregunta que abre la Semana 3:**
-
-> Si `accept` ya devuelve un fd listo para `read`, ¿por qué no duplicar el **proceso** entero para atender varios clientes en paralelo en lugar de duplicar solo el fd?
-
----
-
-## Apéndice para el profesor
-
-### Makefile sugerido (V1)
-
-```makefile
-CC      = gcc
-CFLAGS  = -Wall -Wextra -std=c11 -D_POSIX_C_SOURCE=200809L
-TARGET  = miniserv
-
-$(TARGET): src/server.c
-	$(CC) $(CFLAGS) src/server.c -o $(TARGET)
-
-clean:
-	rm -f $(TARGET)
-
-.PHONY: clean
-```
-
-### Recapitulación de misconceptions
-
-
-| Error frecuente            | Corrección breve                        |
-| -------------------------- | ---------------------------------------- |
-| fd = pathname              | fd = índice en tabla del proceso        |
-| `accept` lee bytes         | `accept` crea fd conectado               |
-| blocking = crash           | blocked = espera eficiente en el SO      |
-| un puerto = un fd global   | puerto en socket; cada proceso tiene fds |
-| sockets no usan read/write | sí, API unificada Unix                  |
-
-### Puente visual hacia fork (no enseñar aún)
-
-```text
-Hoy:  [ MiniServ ] ──accept──► cliente A ──► cliente B (espera)
-
-Semana 3:
-        [ MiniServ padre ] ──accept──► fork ──► hijo atiende A
-                              └──accept──► fork ──► hijo atiende B
-```
-
-Mantener **sin implementar** hasta la Semana 3; solo mostrar al cerrar para motivar.
+https://www.freecodecamp.org/news/what-is-http/

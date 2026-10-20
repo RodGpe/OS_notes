@@ -13,7 +13,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#define PORT 8080
+#define PORT 8082
 #define BACKLOG 8
 #define BUF_SIZE 4096
 

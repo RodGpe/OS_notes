@@ -1,0 +1,180 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-tabla]{babel}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage[framemethod=tex]{mdframed}
+\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage{hyperref}
+
+\geometry{margin=2.5cm}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  urlcolor=blue
+}
+
+\SurroundWithMdFramed[
+  nobreak=true,
+  linewidth=0.4pt,
+  linecolor=black,
+  skipabove=6pt,
+  skipbelow=6pt,
+  innerleftmargin=0pt,
+  innerrightmargin=0pt,
+  innertopmargin=4pt,
+  innerbottommargin=4pt,
+]{lstlisting}
+
+\SurroundWithMdFramed[
+  nobreak=true,
+  linewidth=0.4pt,
+  linecolor=black,
+  skipabove=4pt,
+  skipbelow=4pt,
+  innerleftmargin=4pt,
+  innerrightmargin=4pt,
+  innertopmargin=2pt,
+  innerbottommargin=2pt,
+]{verbatim}
+
+\lstdefinestyle{pseudocode}{
+  basicstyle=\ttfamily\small,
+  frame=none,
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  extendedchars=true,
+  literate=
+    {á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+    {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+    {ñ}{{\~n}}1 {Ñ}{{\~N}}1
+    {ü}{{\"u}}1 {Ü}{{\"U}}1
+    {←}{{$\leftarrow$}}1 {→}{{$\rightarrow$}}1,
+}
+
+\lstdefinestyle{ccode}{
+  language=C,
+  basicstyle=\ttfamily\small,
+  frame=none,
+  breaklines=true,
+  keywordstyle=\color{blue},
+  commentstyle=\color{gray},
+  stringstyle=\color{teal},
+  showstringspaces=false,
+  tabsize=4,
+}
+
+\title{\textbf{Sistemas Operativos}\\Examen 1}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\noindent\textbf{Nombre:}\ \hrulefill\quad
+\textbf{Matrícula:}\ \hrulefill\quad
+\textbf{Fecha:}\ \hrulefill
+
+\vspace{0.8em}
+\noindent Responda con precisión. En diagramas de procesos indique PIDs o roles (padre, hijo, shell, \texttt{nc}, etc.) cuando sea posible. Justifique las respuestas breves.
+
+\vspace{1em}
+\hrule
+\vspace{1em}
+
+\begin{enumerate}[label=\textbf{\arabic*.}, leftmargin=*]
+
+\item Defina formalmente qué es un \emph{programa} y qué es un \emph{proceso}.
+
+\item Si ejecuta el mismo binario dos veces seguidas, ¿se crea uno o dos procesos? Justifique su respuesta.
+
+\item Explique la diferencia conceptual entre \textbf{concurrencia} y \textbf{paralelismo}. Dé un ejemplo de cada uno en un sistema con un solo núcleo de CPU y otro con varios núcleos.
+
+\item ¿Por qué una configuración de arranque dual (\emph{dual boot}) no se considera una forma de virtualización?
+
+\item ¿Qué tipo de estructura del kernel utiliza el sistema operativo Linux? Mencione una característica distintiva de ese modelo frente a un microkernel.
+
+\item Considere el comando ejecutado en una shell:
+\begin{verbatim}
+ls | grep ".c"
+\end{verbatim}
+Responda:
+\begin{enumerate}[label=(\alph*), leftmargin=2em]
+  \item ¿Cuántos procesos participan (incluya los que crea la shell para el pipeline)?
+  \item ¿Qué proceso escribe en la tubería (\emph{pipe})?
+  \item ¿Qué proceso lee de la tubería?
+  \item ¿Qué tipo de tubería se utiliza: anónima o con nombre?
+\end{enumerate}
+
+\item Considere el siguiente programa en C:
+
+\begin{lstlisting}[style=ccode]
+#include <stdio.h>
+#include <unistd.h>
+
+int main(void)
+{
+    fork();
+    fork();
+    execlp("echo", "echo", "hola mundo", (char *)NULL);
+    fork();
+    return 0;
+}
+\end{lstlisting}
+
+\begin{enumerate}[label=(\alph*), leftmargin=2em]
+  \item Dibuje el árbol de procesos generado desde el \texttt{main} original hasta que todas las ramas terminen o queden bloqueadas en \texttt{exec}/\texttt{fork}.
+  \item Indique cuántos procesos existen en el instante en que el último \texttt{fork()} retorna con éxito (antes de que los hijos empiecen a terminar).
+  \item ¿Cuántas veces se imprime \texttt{hola mundo} en la salida estándar? Explique qué ocurre con las llamadas a \texttt{execlp} en los distintos procesos.
+\end{enumerate}
+
+\item Asuma un servidor basado en el pseudocódigo siguiente (modelo \emph{fork-per-client}, puerto 8080). El proceso padre acepta conexiones; cada cliente lo atiende un hijo. \textbf{No} se muestra \texttt{wait}/\texttt{waitpid} en el pseudocódigo.
+
+\begin{lstlisting}[style=pseudocode]
+FUNCIÓN main():
+    listen_fd ← crear socket TCP (IPv4)
+    asociar listen_fd a "IP local" + puerto 8080
+    marcar listen_fd como socket en escucha (cola de conexiones pendientes)
+
+    REPETIR para siempre:
+        client_fd ← esperar nueva conexión en listen_fd   // puede bloquear
+
+        pid ← crear proceso hijo (fork)
+
+        SI soy el HIJO (pid == 0):
+            cerrar listen_fd en el hijo
+            atender_cliente(client_fd)   // al cerrar el cliente, _exit(0)
+            // dormir(3 segundos)
+            terminar proceso hijo con código 0
+        cerrar client_fd en el padre
+        // dormir(20 segundos)
+    FIN REPETIR
+\end{lstlisting}
+
+\noindent En otra terminal, con el servidor ya en ejecución, se lanza:
+
+\begin{verbatim}
+for i in 1 2 3; do nc localhost 8080 & done; wait
+\end{verbatim}
+
+\noindent El \texttt{wait} final espera a que los tres \texttt{nc} en segundo plano terminen; las tres conexiones se intentan de forma \textbf{concurrente}.
+
+\begin{enumerate}[label=(\alph*), leftmargin=2em]
+  \item Tras ejecutar el bucle \texttt{for} anterior (suponga que cada \texttt{nc} se conecta, intercambia datos y cierra la sesión de forma rápida), ¿cuántos procesos del \textbf{programa del servidor} (mismo binario \texttt{miniserv}) existen típicamente en un instante dado mientras los tres clientes aún podrían estar activos? Explique.
+  \item Dibuje el \textbf{árbol genealógico} de procesos involucrados: incluya el proceso padre del servidor, sus hijos worker, la shell que ejecutó el \texttt{for} y los procesos \texttt{nc} (puede usar etiquetas \emph{padre servidor}, \emph{hijo 1}, \emph{nc$_1$}, etc.).
+  \item En el pseudocódigo, las líneas \texttt{// dormir(3 segundos)} (hijo) y \texttt{// dormir(20 segundos)} (padre) están comentadas. Si \textbf{descomenta ambas}, ¿cómo puede afectar eso la aparición de procesos \textbf{zombie}? Relacione hijo que termina, padre que duerme y ausencia de \texttt{wait}.
+  \item Si la línea \texttt{// dormir(20 segundos)} del padre permanece \textbf{comentada}, ¿pueden seguir ejecutándose el servidor y los hijos que atienden clientes? ¿Puede igualmente haber zombies en ese escenario? Argumente.
+\end{enumerate}
+
+\item \textbf{Pregunta extra.} Describa qué ocurre durante el \textbf{POST} (\emph{Power-On Self-Test}) en el arranque del sistema. ¿Qué componente lo ejecuta y qué tipo de fallos puede detectar antes de cargar el sistema operativo?
+
+\end{enumerate}
+
+\end{document}
