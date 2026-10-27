@@ -19,6 +19,12 @@
 #define BACKLOG 8
 #define BUF_SIZE 4096
 
+/*
+ * Pausa didáctica al atender cada cliente (hijo en sleep/read).
+ * Ver README — experimento hijos vivos bajo carga / apagado brusco vs V4.
+ */
+#define SERVE_DELAY_SEC 0
+
 static void die(const char *msg)
 {
     perror(msg);
@@ -47,6 +53,12 @@ static void serve_client(int client_fd)
 {
     char buf[BUF_SIZE];
     ssize_t n;
+
+    if (SERVE_DELAY_SEC > 0) {
+        dprintf(STDERR_FILENO, "[hijo pid=%d] pausa %d s antes del echo\n",
+                (int)getpid(), SERVE_DELAY_SEC);
+        sleep((unsigned int)SERVE_DELAY_SEC);
+    }
 
     while ((n = read(client_fd, buf, sizeof(buf))) > 0) {
         if (write_all(client_fd, buf, (size_t)n) < 0) {
@@ -107,11 +119,9 @@ int main(void)
     if (listen(listen_fd, BACKLOG) < 0)
         die("listen");
 
-    {
-        const char banner[] = "MiniServ V3 (fork-per-client) en puerto 8080\n";
-        if (write_all(STDERR_FILENO, banner, sizeof(banner) - 1) < 0)
-            die("write");
-    }
+    dprintf(STDERR_FILENO,
+            "MiniServ V3 (fork-per-client) en puerto %d, pid=%d\n",
+            PORT, (int)getpid());
 
     for (;;) {
         pid_t pid;

@@ -272,194 +272,787 @@ Servidor final
 
 # 5. Plan general de las 16 semanas
 
-## Semana 1 — Arquitectura del SO y llamadas al sistema
 
-Conceptos:
 
-- qué hace un sistema operativo;
-- kernel;
-- user space y kernel space;
-- modo usuario vs. modo kernel;
-- interrupciones;
-- excepciones;
-- traps;
-- system calls;
-- API del SO;
-- introducción a POSIX;
-- `read`;
-- `write`;
-- `open`;
-- `close`;
-- `strace`.
+MES 1 — Llamadas al sistema, procesos y servidor básico
 
-MiniServ:
+# Semana 1 — ¿Qué hace realmente un Sistema Operativo?
 
-- crear la estructura inicial del proyecto.
+## Temas
 
----
+* hardware vs. software;
+* kernel;
+* espacio de usuario;
+* espacio de kernel;
+* modo usuario;
+* modo privilegiado;
+* procesos;
+* system calls;
+* arquitectura básica de Linux.
 
-## Semana 2 — File descriptors, sockets e I/O bloqueante
+### Pregunta central
 
-Conceptos:
+Cuando nuestro programa en C ejecuta:
 
-- file descriptors;
-- stdin;
-- stdout;
-- stderr;
-- `read`;
-- `write`;
-- `close`;
-- I/O bloqueante;
-- sockets;
-- `socket`;
-- `bind`;
-- `listen`;
-- `accept`.
+```c
+write(fd, buffer, size);
+```
 
-MiniServ:
+¿quién escribe realmente los datos?
 
-- servidor TCP secuencial.
+El programa no accede directamente al hardware.
 
----
-
-## Semana 3 — Creación y administración de procesos
-
-Conceptos:
-
-- proceso;
-- PID;
-- PPID;
-- `fork`;
-- parent;
-- child;
-- `wait`;
-- `waitpid`;
-- árbol de procesos;
-- introducción a `exec`.
-
-MiniServ:
-
-- pasar del servidor secuencial a **fork-per-client**.
+```text
+Aplicación
+     │
+     │ write()
+     ▼
+   libc
+     │
+     │ syscall
+     ▼
+──────── frontera usuario/kernel ────────
+     │
+     ▼
+Kernel Linux
+     │
+     ▼
+Filesystem / socket / dispositivo
+```
 
 ---
 
-## Semana 4 — Herencia de recursos y procesos zombie
+## Sesión 1 — 90 minutos
 
-Conceptos:
 
-- herencia de file descriptors;
-- referencias a objetos abiertos;
-- cierre correcto de FDs;
-- zombies;
-- orphans;
-- tabla de procesos;
-- `/proc`;
-- `ps`;
-- `pstree`.
-
-MiniServ:
-
-- corregir ownership de file descriptors;
-- provocar y eliminar zombies.
+| Tiempo     | Tema                                   |
+| ---------- | -------------------------------------- |
+| 0–15 min  | Motivación: ¿para qué existe un SO? |
+| 15–35 min | Modo usuario vs. modo kernel           |
+| 35–50 min | Qué es un proceso                     |
+| 50–70 min | System calls                           |
+| 70–80 min | Demostración con`strace`              |
+| 80–90 min | Preguntas y discusión                 |
 
 ---
 
-## Semana 5 — Señales
+## Sesión 2 — Laboratorio
 
-Conceptos:
+Observar:
 
-- señales;
-- eventos asíncronos;
-- `SIGINT`;
-- `SIGTERM`;
-- `SIGCHLD`;
-- `SIGPIPE`;
-- `sigaction`;
-- `EINTR`;
-- signal handlers.
+```bash
+strace ls
+```
 
-MiniServ:
+y:
 
-- recolección de hijos;
-- cierre ordenado del servidor.
+```bash
+strace cat archivo.txt
+```
 
----
+Identificar llamadas como:
 
-## Semana 6 — Scheduling y cambios de contexto
+```text
+openat()
+read()
+write()
+close()
+mmap()
+```
 
-Conceptos:
+### Milestone 0
 
-- estados de proceso;
-- ready;
-- running;
-- blocked;
-- scheduler;
-- preemption;
-- quantum;
-- context switch;
-- CPU-bound;
-- I/O-bound;
-- throughput;
-- latency.
+Crear la estructura del proyecto:
 
-MiniServ:
+```text
+miniserv/
+├── Makefile
+├── src/
+│   └── server.c
+├── include/
+└── README.md
+```
 
-- comparar servidor secuencial y fork-per-client.
+Programa inicial:
 
----
+```c
+#include <stdio.h>
 
-## Semana 7 — IPC mediante pipes
+int main(void)
+{
+    printf("MiniServ iniciado\n");
+    return 0;
+}
+```
 
-Conceptos:
+Compilar:
 
-- IPC;
-- `pipe`;
-- read end;
-- write end;
-- herencia de pipes;
-- bloqueo;
-- productores y consumidores.
+```bash
+gcc -Wall -Wextra src/server.c -o miniserv
+```
 
-MiniServ:
+Ejecutar:
 
-- proceso logger independiente;
-- workers envían mensajes mediante IPC.
+```bash
+./miniserv
+```
 
----
+Salida esperada:
 
-## Semana 8 — Race conditions y sincronización
-
-Conceptos:
-
-- concurrencia;
-- race condition;
-- operaciones no atómicas;
-- critical section;
-- mutual exclusion;
-- mutex;
-- semaphore;
-- deadlock.
-
-MiniServ:
-
-- introducir estadísticas globales;
-- demostrar condiciones de carrera.
+```text
+MiniServ iniciado
+```
 
 ---
 
-## Semana 9 — Memoria compartida
+# Semana 2 — Descriptores de archivo e I/O bloqueante
 
-Conceptos:
+## Conceptos
 
-- aislamiento de procesos;
-- shared memory;
-- `mmap`;
-- `MAP_SHARED`;
-- process-shared synchronization.
+* file descriptor;
+* `open`;
+* `read`;
+* `write`;
+* `close`;
+* sockets;
+* I/O bloqueante;
+* stdin;
+* stdout;
+* stderr.
 
-MiniServ:
+Idea fundamental de Unix:
 
-mantener estadísticas como:
+> Muchas abstracciones del sistema se manipulan utilizando descriptores de archivo.
+
+Ejemplo:
+
+```text
+Proceso
+
+Tabla de FDs
+┌────┬──────────────────┐
+│ 0  │ stdin            │
+│ 1  │ stdout           │
+│ 2  │ stderr           │
+│ 3  │ socket servidor  │
+│ 4  │ socket cliente   │
+└────┴──────────────────┘
+```
+
+---
+
+## Introducción mínima a sockets
+
+Presentar:
+
+```c
+socket()
+bind()
+listen()
+accept()
+read()
+write()
+close()
+```
+
+Ciclo básico:
+
+```text
+socket()
+   │
+bind()
+   │
+listen()
+   │
+accept()
+   │
+read()
+   │
+write()
+   │
+close()
+```
+
+---
+
+# Milestone 1 — Servidor TCP secuencial
+
+El estudiante implementará un servidor al que pueda conectarse usando:
+
+```bash
+nc localhost 8080
+```
+
+Cliente:
+
+```text
+hola
+```
+
+Servidor responde:
+
+```text
+Hola desde MiniServ
+```
+
+El punto importante no es todavía TCP.
+
+El punto importante es observar:
+
+```c
+read(client_fd, buffer, sizeof(buffer));
+```
+
+Cuando no llegan datos:
+
+```text
+RUNNING
+   │
+read()
+   ▼
+BLOCKED
+   │
+llegan datos
+   ▼
+READY
+   │
+scheduler
+   ▼
+RUNNING
+```
+
+---
+
+# Semana 3 — Creación de procesos
+
+## Conceptos
+
+* `fork()`;
+* proceso padre;
+* proceso hijo;
+* PID;
+* PPID;
+* árbol de procesos;
+* espacio de direcciones;
+* `wait()`;
+* `waitpid()`.
+
+Programa demostrativo:
+
+```c
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+int main(void)
+{
+    pid_t pid = fork();
+
+    if (pid < 0) {
+        perror("fork");
+        return 1;
+    }
+
+    if (pid == 0) {
+        printf("Hijo: PID=%d PPID=%d\n",
+               getpid(), getppid());
+        return 0;
+    }
+
+    printf("Padre: PID=%d hijo=%d\n",
+           getpid(), pid);
+
+    wait(NULL);
+
+    return 0;
+}
+```
+
+Compilar:
+
+```bash
+gcc -Wall -Wextra fork_demo.c -o fork_demo
+```
+
+Ejecutar:
+
+```bash
+./fork_demo
+```
+
+Posible salida:
+
+```text
+Padre: PID=4000 hijo=4001
+Hijo: PID=4001 PPID=4000
+```
+
+También podría aparecer primero el mensaje del hijo.
+
+Eso es correcto.
+
+El orden depende del scheduler.
+
+---
+
+# Milestone 2 — Fork por cliente
+
+Transformar:
+
+```text
+un servidor
+```
+
+en:
+
+```text
+               Parent
+                 │
+                 │ fork()
+                 │
+       ┌─────────┼─────────┐
+       │         │         │
+     Child     Child     Child
+       │         │         │
+ Client A    Client B    Client C
+```
+
+Estructura conceptual:
+
+```c
+while (1) {
+
+    client_fd = accept(...);
+
+    pid_t pid = fork();
+
+    if (pid == 0) {
+
+        close(server_fd);
+
+        handle_client(client_fd);
+
+        close(client_fd);
+
+        _exit(0);
+    }
+
+    close(client_fd);
+}
+```
+
+Ahora múltiples clientes pueden ser atendidos simultáneamente.
+
+---
+
+# Semana 4 — Herencia de descriptores y procesos zombie
+
+Después de:
+
+```c
+client_fd = accept(...);
+fork();
+```
+
+los descriptores se heredan.
+
+```text
+Antes de fork()
+
+Parent
+FD 3 → listening socket
+FD 4 → client socket
+
+           fork()
+             │
+      ┌──────┴──────┐
+
+Parent              Child
+
+FD3 → server        FD3 → server
+FD4 → client        FD4 → client
+```
+
+Por eso:
+
+Padre:
+
+```c
+close(client_fd);
+```
+
+Hijo:
+
+```c
+close(server_fd);
+```
+
+---
+
+## Procesos zombie
+
+```text
+Parent
+  │
+  ├── Child
+  │      │
+  │     exit()
+  │      │
+  │      ▼
+  │    ZOMBIE
+  │
+ wait()
+  │
+  ▼
+Información recolectada
+```
+
+Observar con:
+
+```bash
+ps -o pid,ppid,state,cmd
+```
+
+Un zombie aparecerá con estado:
+
+```text
+Z
+```
+
+### Actividad
+
+Los estudiantes deben:
+
+1. generar zombies intencionalmente;
+2. observarlos;
+3. explicar por qué existen;
+4. arreglar el problema usando `wait()` o `waitpid()`.
+
+---
+
+# MES 2 — Señales, IPC y sincronización
+
+# Semana 5 — Señales
+
+## Conceptos
+
+* señales;
+* eventos asíncronos;
+* `SIGINT`;
+* `SIGTERM`;
+* `SIGCHLD`;
+* `SIGPIPE`;
+* `sigaction()`;
+* `EINTR`.
+
+Ejemplo:
+
+```bash
+Ctrl+C
+```
+
+produce típicamente:
+
+```text
+SIGINT
+```
+
+El servidor no debería simplemente desaparecer.
+
+Queremos:
+
+```text
+SIGTERM / SIGINT
+       │
+       ▼
+     Master
+       │
+       ├── detener nuevos clientes
+       ├── notificar workers
+       ├── esperar workers
+       ├── cerrar sockets
+       └── terminar
+```
+
+---
+
+# Milestone 3 — Manejo de señales
+
+Implementar:
+
+* `SIGINT`;
+* `SIGTERM`;
+* `SIGCHLD`;
+* cierre ordenado;
+* recolección de hijos.
+
+Usar:
+
+```c
+sigaction()
+```
+
+como API principal.
+
+---
+
+# Semana 6 — Scheduling y cambios de contexto
+
+Ahora tenemos suficientes procesos para entender por qué existe el scheduler.
+
+## Conceptos
+
+* scheduler;
+* ready queue;
+* running;
+* waiting;
+* blocked;
+* preemption;
+* quantum;
+* context switch;
+* proceso CPU-bound;
+* proceso I/O-bound.
+
+```text
+Ready Queue
+
+P2 → P5 → P8 → P3
+          │
+          ▼
+         CPU
+       ┌─────┐
+       │ P1  │
+       └─────┘
+```
+
+El servidor suele ser principalmente:
+
+```text
+I/O-bound
+```
+
+porque pasa mucho tiempo esperando:
+
+```text
+network
+disk
+clients
+```
+
+---
+
+## Experimento
+
+Comparar:
+
+```text
+Servidor secuencial
+```
+
+con:
+
+```text
+fork-per-client
+```
+
+Generar múltiples clientes:
+
+```bash
+seq 1 20 | xargs -n1 -P20 -I{} \
+curl -s http://127.0.0.1:8080/
+```
+
+Medir:
+
+```bash
+time comando
+```
+
+Discutir:
+
+* concurrencia;
+* throughput;
+* cambio de contexto;
+* uso de CPU;
+* uso de memoria.
+
+---
+
+# Semana 7 — Comunicación entre procesos: Pipes
+
+## Problema
+
+Supongamos que todos los workers escriben directamente en:
+
+```text
+server.log
+```
+
+Podemos separar responsabilidades usando IPC.
+
+```text
+Worker 1 ───┐
+Worker 2 ───┼──► Logger ───► access.log
+Worker 3 ───┘
+```
+
+## Conceptos
+
+* IPC;
+* pipe;
+* extremo de lectura;
+* extremo de escritura;
+* `pipe()`;
+* mensajes;
+* productores;
+* consumidor.
+
+---
+
+# Milestone 4 — Logger independiente
+
+Agregar:
+
+```text
+logger.c
+logger.h
+```
+
+Los workers generan mensajes como:
+
+```text
+GET /index.html 200 1024
+```
+
+y los envían al proceso logger.
+
+El logger es el único proceso que modifica:
+
+```text
+access.log
+```
+
+---
+
+# Semana 8 — Race conditions y sincronización
+
+Supongamos que tenemos:
+
+```c
+requests++;
+```
+
+No debemos asumir que es una única operación indivisible.
+
+Conceptualmente:
+
+```text
+LOAD requests
+ADD 1
+STORE requests
+```
+
+Dos procesos pueden hacer:
+
+```text
+Worker A                    Worker B
+
+LOAD 10
+                            LOAD 10
+
+ADD 1
+                            ADD 1
+
+STORE 11
+                            STORE 11
+```
+
+Resultado esperado:
+
+```text
+12
+```
+
+Resultado posible:
+
+```text
+11
+```
+
+---
+
+## Conceptos
+
+* race condition;
+* critical section;
+* atomicidad;
+* mutual exclusion;
+* semaphore;
+* mutex;
+* deadlock.
+
+---
+
+# Semana 9 — Memoria compartida
+
+Normalmente:
+
+```text
+Proceso A              Proceso B
+
+counter = 10           counter = 10
+
+     memorias independientes
+```
+
+Pero podemos crear:
+
+```text
+Proceso A
+    │
+    ▼
+┌──────────────────┐
+│ Memoria          │
+│ compartida       │
+│                  │
+│ requests = 100   │
+└──────────────────┘
+    ▲
+    │
+Proceso B
+```
+
+Ejemplo mediante:
+
+```c
+mmap(
+    NULL,
+    sizeof(struct server_stats),
+    PROT_READ | PROT_WRITE,
+    MAP_SHARED | MAP_ANONYMOUS,
+    -1,
+    0
+);
+```
+
+---
+
+## Estructura de estadísticas
+
+```c
+struct server_stats {
+    unsigned long requests;
+    unsigned long errors;
+    unsigned long bytes_sent;
+    unsigned int active_clients;
+};
+```
+
+---
+
+# Milestone 5 — Estadísticas compartidas
+
+Los workers actualizan:
 
 ```text
 requests
@@ -468,169 +1061,645 @@ bytes_sent
 active_clients
 ```
 
----
+Primero sin sincronización.
 
-## Semana 10 — Memoria virtual y Copy-on-Write
+Realizar pruebas.
 
-Conceptos:
+Después proteger los datos.
 
-- virtual address;
-- physical address;
-- pages;
-- page tables;
-- page faults;
-- demand paging;
-- Copy-on-Write;
-- relación entre `fork()` y COW;
-- RSS;
-- VSZ;
-- `/proc/<pid>/maps`.
-
-MiniServ:
-
-- analizar memoria del master y los workers.
+El alumno deberá demostrar experimentalmente que una race condition puede producir resultados incorrectos.
 
 ---
 
-## Semana 11 — Prefork worker pool
+# MES 3 — Memoria, worker pools y filesystem
 
-Conceptos:
+# Semana 10 — Memoria virtual y Copy-on-Write
 
-- costo de creación de procesos;
-- lifecycle;
-- worker pool;
-- reutilización;
-- scheduling;
-- resource management.
+Hasta ahora hemos utilizado:
 
-MiniServ:
+```c
+fork()
+```
+
+sin estudiar profundamente qué ocurre con la memoria.
+
+Una idea ingenua sería:
+
+```text
+fork()
+
+copiar toda la memoria
+```
+
+Pero eso sería muy costoso.
+
+Linux y otros sistemas modernos utilizan técnicas como:
+
+```text
+Copy-on-Write
+```
+
+Inicialmente:
+
+```text
+Parent virtual memory
+          │
+          ▼
+        Page A
+          ▲
+          │
+Child virtual memory
+```
+
+Ambos pueden referenciar inicialmente la misma página física.
+
+Cuando uno modifica:
+
+```text
+Parent                Child
+
+Page A                Page B
+```
+
+---
+
+## Conceptos
+
+* dirección virtual;
+* dirección física;
+* página;
+* page table;
+* page fault;
+* copy-on-write;
+* demand paging;
+* RSS;
+* VSZ.
+
+---
+
+## Observación en Linux
+
+```bash
+cat /proc/<PID>/maps
+```
+
+y:
+
+```bash
+cat /proc/<PID>/status
+```
+
+También:
+
+```bash
+ps -o pid,ppid,vsz,rss,stat,cmd
+```
+
+Preguntar:
+
+> Si copy-on-write evita copiar inmediatamente toda la memoria, ¿por qué no crear 100,000 procesos?
+
+Esto lleva a discutir:
+
+* estructuras del kernel;
+* page tables;
+* scheduling;
+* file descriptors;
+* memoria física;
+* límites de procesos.
+
+---
+
+# Semana 11 — Pool de procesos prefork
+
+Problema actual:
+
+```text
+request
+   │
+accept()
+   │
+fork()
+   │
+serve
+   │
+exit()
+```
+
+Por cada petición creamos un proceso.
+
+Eso tiene costo.
+
+Nueva arquitectura:
+
+```text
+            Master
+              │
+       fork al inicio
+              │
+     ┌────────┼────────┐
+     │        │        │
+ Worker 1  Worker 2  Worker 3
+     │        │        │
+ accept()  accept()  accept()
+```
+
+---
+
+## Comparación
+
+### Fork-per-client
+
+```text
+accept
+fork
+serve
+exit
+```
+
+### Pre-fork
+
+```text
+startup
+
+fork
+fork
+fork
+fork
+
+después:
+
+accept
+serve
+accept
+serve
+accept
+serve
+```
+
+---
+
+# Milestone 6 — Pool de workers
+
+El servidor debe aceptar:
 
 ```bash
 ./miniserv -w 4
 ```
 
-debe crear un master y cuatro workers persistentes.
+y crear cuatro workers.
+
+Observar:
+
+```bash
+ps -ef | grep miniserv
+```
+
+Posible resultado:
+
+```text
+5010 miniserv master
+5011 miniserv worker
+5012 miniserv worker
+5013 miniserv worker
+5014 miniserv worker
+```
 
 ---
 
-## Semana 12 — Filesystem
+## Conexión profesional
 
-Conceptos:
+Arquitecturas prefork han sido utilizadas por servidores reales.
 
-- archivos;
-- directorios;
-- inodes;
-- metadata;
-- offsets;
-- permisos;
-- page cache;
-- `open`;
-- `read`;
-- `stat`.
+Por ejemplo, Apache HTTP Server históricamente ha utilizado distintos modelos de procesamiento, incluidos modelos basados en múltiples procesos.
 
-MiniServ:
+Esto permite conectar directamente:
 
-- servir archivos estáticos mediante HTTP.
+```text
+teoría del SO
+     │
+     ▼
+arquitectura de software real
+```
 
 ---
 
-## Semana 13 — I/O bloqueante, nonblocking y multiplexación
+# Semana 12 — Sistemas de archivos
 
-Conceptos:
+Ahora el servidor comenzará a servir archivos reales.
 
-- llamadas bloqueantes;
-- slow clients;
-- `O_NONBLOCK`;
-- `select`;
-- `poll`;
-- introducción a `epoll`;
-- readiness;
-- event-driven I/O.
+Petición:
 
-MiniServ:
+```text
+GET /hello.txt
+```
 
-- analizar workers bloqueados;
-- `epoll` como extensión avanzada.
+Flujo:
 
----
-
-## Semana 14 — Administración de recursos, robustez y seguridad
-
-Conceptos:
-
-- file descriptor exhaustion;
-- `RLIMIT_NOFILE`;
-- `RLIMIT_NPROC`;
-- `ulimit`;
-- partial reads;
-- partial writes;
-- errores de system calls;
-- `SIGPIPE`;
-- least privilege;
-- path traversal.
-
-MiniServ:
-
-- manejar errores;
-- desconexiones;
-- límites;
-- requests inválidos;
-- evitar acceso fuera de `www/`.
+```text
+HTTP Request
+     │
+     ▼
+parsear path
+     │
+     ▼
+open()
+     │
+     ▼
+filesystem
+     │
+     ▼
+read()
+     │
+     ▼
+write(socket)
+```
 
 ---
 
-## Semana 15 — Supervisión y tolerancia a fallas
+## Conceptos
 
-Conceptos:
+* archivo;
+* directorio;
+* inode;
+* metadata;
+* file offset;
+* permisos;
+* filesystem;
+* page cache;
+* `stat()`.
 
-- supervisor;
-- worker crashes;
-- `SIGCHLD`;
-- `waitpid`;
-- recuperación;
-- restart;
-- graceful shutdown.
+Ejemplo:
 
-MiniServ:
+```c
+int fd = open("www/index.html", O_RDONLY);
+
+ssize_t n = read(fd, buffer, sizeof(buffer));
+
+write(client_fd, buffer, n);
+
+close(fd);
+```
+
+---
+
+# Milestone 7 — Servidor de archivos estáticos
+
+Estructura:
+
+```text
+www/
+├── index.html
+├── style.css
+├── image.jpg
+└── hello.txt
+```
+
+Debe servir:
+
+```text
+HTML
+CSS
+TXT
+JPEG
+PNG
+```
+
+---
+
+## Error conceptual importante
+
+Para datos binarios no debemos hacer:
+
+```c
+strlen(buffer);
+```
+
+para determinar cuánto se leyó.
+
+Debemos utilizar el valor regresado por:
+
+```c
+read()
+```
+
+por ejemplo:
+
+```c
+ssize_t n = read(fd, buffer, sizeof(buffer));
+```
+
+y posteriormente:
+
+```c
+write(client_fd, buffer, n);
+```
+
+---
+
+# Semana 13 — I/O bloqueante y multiplexación
+
+Problema:
+
+```text
+Worker
+   │
+accept()
+   │
+read()
+   │
+BLOCKED
+```
+
+Si el cliente conecta pero nunca manda datos:
+
+```text
+Cliente lento
+      │
+      ▼
+   Worker
+      │
+   read()
+      │
+   BLOQUEADO
+```
+
+Ese worker no puede atender otro cliente.
+
+---
+
+## Introducir
+
+* blocking I/O;
+* nonblocking I/O;
+* `select()`;
+* `poll()`;
+* `epoll()`;
+* readiness;
+* event-driven I/O.
+
+---
+
+## Arquitectura tradicional
+
+```text
+Cliente A ─── Worker A
+Cliente B ─── Worker B
+Cliente C ─── Worker C
+```
+
+---
+
+## Arquitectura multiplexada
+
+```text
+Cliente A ─┐
+Cliente B ─┼──► epoll ───► Worker
+Cliente C ─┘
+Cliente D ─┘
+```
+
+---
+
+## Milestone opcional avanzado
+
+Cada worker puede manejar múltiples conexiones mediante:
+
+```c
+epoll()
+```
+
+No es necesario para aprobar el proyecto.
+
+Puede utilizarse como:
+
+```text
+bonus
+proyecto avanzado
+trabajo final sobresaliente
+```
+
+---
+
+# MES 4 — Robustez, seguridad y desempeño
+
+# Semana 14 — Administración de recursos
+
+Los estudiantes intentarán romper su propio servidor.
+
+## Conceptos
+
+* file descriptor exhaustion;
+* límites de procesos;
+* límites de memoria;
+* `RLIMIT_NOFILE`;
+* `RLIMIT_NPROC`;
+* `SIGPIPE`;
+* partial reads;
+* partial writes;
+* errores de system calls.
+
+Observar:
+
+```bash
+ulimit -a
+```
+
+Descriptores abiertos:
+
+```bash
+ls /proc/<PID>/fd
+```
+
+Sockets:
+
+```bash
+ss -ltnp
+```
+
+También puede utilizarse:
+
+```bash
+lsof -p <PID>
+```
+
+---
+
+# Seguridad básica
+
+Considerar una petición como:
+
+```text
+GET /../../../../etc/passwd
+```
+
+¿Qué ocurriría si simplemente hacemos?
+
+```c
+open(requested_path, O_RDONLY);
+```
+
+Podríamos permitir acceso a archivos fuera de:
+
+```text
+./www
+```
+
+Esto introduce:
+
+* path traversal;
+* validación de entrada;
+* least privilege;
+* separación de privilegios;
+* límites de recursos.
+
+---
+
+# Milestone 8 — Robustez
+
+El servidor debe sobrevivir a:
+
+* peticiones inválidas;
+* clientes que se desconectan;
+* archivos inexistentes;
+* conexiones rápidas;
+* requests incompletos;
+* workers muertos;
+* errores de system calls.
+
+---
+
+# Semana 15 — Supervisión de procesos y tolerancia a fallas
+
+Provocar intencionalmente:
+
+```c
+abort();
+```
+
+dentro de un worker.
+
+Mala arquitectura:
 
 ```text
 Worker muere
-      ↓
+     │
+     ▼
+capacidad del servidor disminuye
+```
+
+Mejor:
+
+```text
+Worker muere
+     │
+     ▼
 SIGCHLD
-      ↓
-Master detecta
-      ↓
+     │
+     ▼
+Master
+     │
+ detecta muerte
+     │
+     ▼
 fork()
-      ↓
-Worker nuevo
+     │
+     ▼
+nuevo Worker
+```
+
+Diagrama:
+
+```text
+                Master
+                  │
+          ┌───────┼───────┐
+          ▼       ▼       ▼
+          W1      W2      W3
+                  │
+                CRASH
+                  │
+                  ▼
+               SIGCHLD
+                  │
+                  ▼
+                Master
+                  │
+                fork()
+                  │
+                  ▼
+                 W4
 ```
 
 ---
 
-## Semana 16 — Desempeño e integración final
+# Milestone 9 — Supervisión
 
-Conceptos:
+Si se configura:
 
-- latency;
-- throughput;
-- CPU;
-- memoria;
-- context switches;
-- system calls;
-- benchmarking;
-- observabilidad.
+```bash
+./miniserv -w 4
+```
 
-Comparar:
+deben existir siempre aproximadamente cuatro workers.
+
+Ejemplo:
+
+```bash
+kill -9 <worker_pid>
+```
+
+Después:
+
+```bash
+ps -ef | grep miniserv
+```
+
+deberá aparecer un worker nuevo.
+
+---
+
+# Semana 16 — Desempeño e integración final
+
+Comparar tres arquitecturas.
+
+## Arquitectura A
 
 ```text
-secuencial
-    vs
+Servidor secuencial
+```
+
+## Arquitectura B
+
+```text
 fork-per-client
-    vs
-prefork
-    vs
+```
+
+## Arquitectura C
+
+```text
+prefork worker pool
+```
+
+Opcional:
+
+```text
 prefork + epoll
 ```
+
+---
+
+# Métricas
+
+Medir:
+
+* throughput;
+* latency;
+* CPU;
+* memoria;
+* número de procesos;
+* context switches;
+* system calls.
 
 Herramientas:
 
@@ -644,6 +1713,71 @@ ss
 /proc
 ```
 
+Opcionalmente:
+
+```bash
+perf
+```
+
+si se desea profundizar.
+
+---
+
+# Arquitectura final
+
+```text
+                         CLIENTES
+                            │
+                            ▼
+                    Listening Socket
+                            │
+                            ▼
+                    ┌──────────────┐
+                    │    MASTER    │
+                    │              │
+                    │ signals      │
+                    │ supervision  │
+                    │ workers      │
+                    └──────┬───────┘
+                           │
+             ┌─────────────┼─────────────┐
+             │             │             │
+             ▼             ▼             ▼
+          Worker 1      Worker 2      Worker 3
+             │             │             │
+             └──────┬──────┴──────┬──────┘
+                    │             │
+                    ▼             ▼
+             Memoria compartida   Pipe
+                    │             │
+                    ▼             ▼
+               Estadísticas      Logger
+                                   │
+                                   ▼
+                              access.log
+```
+
+Cada worker:
+
+```text
+accept()
+   │
+read()
+   │
+parse request
+   │
+open()
+   │
+read file
+   │
+write response
+   │
+actualizar stats
+   │
+enviar log
+```
+
+---
 ---
 
 # 6. Formato obligatorio para desarrollar cada semana
@@ -1194,44 +2328,6 @@ La sensación que debe quedar al estudiante cada semana es:
 
 ---
 
-# ÚNICA SECCIÓN QUE SE MODIFICA PARA CADA SEMANA
 
-## Semana a desarrollar
 
-**Semana:** [NÚMERO]
-
-**Nombre de la semana:** [NOMBRE]
-
-**Temas principales:**
-
-- [TEMA 1]
-- [TEMA 2]
-- [TEMA 3]
-- [TEMA 4]
-- [TEMA 5]
-
-**MiniServ al iniciar la semana:**
-
-[Describe brevemente qué versión de MiniServ ya tienen los estudiantes y qué funcionalidades fueron implementadas durante las semanas anteriores.]
-
-**Problema que motiva esta semana:**
-
-[Describe la limitación concreta que ahora aparece en MiniServ.]
-
-**Milestone que debe existir al terminar la semana:**
-
-[Describe exactamente qué nueva funcionalidad o modificación arquitectónica deberán implementar.]
-
-**Conceptos de semanas anteriores que puedes asumir:**
-
-- [CONCEPTO 1]
-- [CONCEPTO 2]
-- [CONCEPTO 3]
-
-**Conceptos que NO debes asumir todavía:**
-
-- [CONCEPTO FUTURO 1]
-- [CONCEPTO FUTURO 2]
-- [CONCEPTO FUTURO 3]
-
-Genera el material completo de esta semana siguiendo todas las instrucciones anteriores.
+DESARROLLA LOS TEMAS DE LA SEMANA 5 en la carpeta semana 4
